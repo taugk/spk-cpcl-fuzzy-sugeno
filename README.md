@@ -54,8 +54,13 @@ Sistem Pendukung Keputusan (SPK) untuk menentukan kelayakan **Calon Petani Calon
     ```bash
     php artisan migrate --seed
     ```
+5. **Symlink Storage**
+   Hubungkan folder storage agar file gambar/dokumen dapat diakses oleh publik.
+   ```bash
+   php artisan storage:link
+   ```
 
-5. **Jalankan Aplikasi**
+6. **Jalankan Aplikasi**
 
     ```bash
     php artisan serve
