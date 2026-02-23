@@ -29,7 +29,7 @@ Sistem Pendukung Keputusan (SPK) untuk menentukan kelayakan **Calon Petani Calon
 1. **Clone Repositori**
 
     ```bash
-    git clone [https://github.com/taugk/spk-cpcl-fuzzy-sugeno.git]
+    git clone https://github.com/taugk/spk-cpcl-fuzzy-sugeno.git
     cd spk-cpcl-fuzzy-sugeno
     ```
 
