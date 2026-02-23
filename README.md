@@ -12,7 +12,7 @@ Sistem Pendukung Keputusan (SPK) untuk menentukan kelayakan **Calon Petani Calon
 
 ## 🛠️ Teknologi yang Digunakan
 
-- **Framework**: Laravel 11 (PHP 8.2+)
+- **Framework**: Laravel 12 (PHP 8.2+)
 - **Database**: MySQL / MariaDB
 - **Frontend**: Bootstrap / Sneat Admin Template
 - **Library**: Chart.js (Visualisasi Kurva Fuzzy)
