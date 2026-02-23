@@ -1,4 +1,4 @@
-# SPK Pemilihan CPCL - Metode Fuzzy Sugeno Orde Nol
+# SPK CPCL - Metode Fuzzy Sugeno Orde Nol
 
 Sistem Pendukung Keputusan (SPK) untuk menentukan kelayakan **Calon Petani Calon Lokasi (CPCL)** menggunakan metode **Fuzzy Sugeno Orde Nol**. Aplikasi ini dirancang untuk mendigitalisasi proses verifikasi dan penilaian kelompok tani secara transparan dan akurat.
 
@@ -54,11 +54,13 @@ Sistem Pendukung Keputusan (SPK) untuk menentukan kelayakan **Calon Petani Calon
     ```bash
     php artisan migrate --seed
     ```
+
 5. **Symlink Storage**
    Hubungkan folder storage agar file gambar/dokumen dapat diakses oleh publik.
-   ```bash
-   php artisan storage:link
-   ```
+
+    ```bash
+    php artisan storage:link
+    ```
 
 6. **Jalankan Aplikasi**
 
