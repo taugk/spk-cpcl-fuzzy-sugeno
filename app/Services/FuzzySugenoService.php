@@ -4,141 +4,150 @@ namespace App\Services;
 
 use App\Models\Cpcl;
 use App\Models\Kriteria;
+use App\Models\HasilFuzzy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class FuzzySugenoService
 {
+    /**
+     * Menghitung skor kelayakan dan menyimpan hasil ke database.
+     */
     public static function hitungDanSimpan($cpcl_id)
     {
-        Log::info("========================================================");
-        Log::info("START: PROSES PERHITUNGAN FUZZY SUGENO (ID: $cpcl_id)");
-        Log::info("========================================================");
-
-        $cpcl = Cpcl::find($cpcl_id);
-        if (!$cpcl) return false;
-
-        $kriteriaList = Kriteria::with('subKriteria')->get();
-        $jumlahKriteria = $kriteriaList->count();
-        $nilaiC = []; 
-
-        // =======================================================
-        // A. TAHAP FUZZIFIKASI & MATRIKS NILAI KEANGGOTAAN
-        // =======================================================
-        Log::info("A. TAHAP FUZZIFIKASI & MATRIKS NILAI KEANGGOTAAN");
+        $hasil = self::hitung($cpcl_id);
         
+        HasilFuzzy::updateOrCreate(
+            ['cpcl_id' => $cpcl_id],
+            [
+                'nilai_alpha'      => $hasil['alpha'],
+                'nilai_z'          => $hasil['ki'],
+                'skor_akhir'       => $hasil['skor_akhir'],
+                'status_kelayakan' => $hasil['status'],
+                'skala_prioritas'  => $hasil['skala_prioritas'],
+                'interpretasi'     => $hasil['interpretasi']
+            ]
+        );
+        
+        return $hasil;
+    }
+
+    /**
+     * Inti perhitungan Fuzzy Sugeno Orde Nol sesuai metodologi.
+     */
+    public static function hitung($cpcl_id)
+    {
+        $cpcl = Cpcl::findOrFail($cpcl_id);
+        
+        $kriteriaList = Kriteria::with(['subKriteria'])->orderBy('id', 'asc')->get();
+        $detailFuzzifikasi = [];
+        $nilaiC = [];
+
         foreach ($kriteriaList as $kriteria) {
             $penilaian = DB::table('cpcl_penilaian')
                 ->where('cpcl_id', $cpcl_id)
                 ->where('kriteria_id', $kriteria->id)
                 ->first();
 
-            $nilaiInput = $penilaian ? $penilaian->nilai : 0;
-            $skorKriteria = 0; 
+            $rawInput = $penilaian ? $penilaian->nilai : '';
+            $x = self::mapInputToValue($rawInput, $kriteria->kode_kriteria); 
 
-            Log::info("Kriteria {$kriteria->kode_kriteria} ({$kriteria->nama_kriteria}) | Input: $nilaiInput");
+            $total_mu_bobot = 0;
+            $total_mu = 0;
+            $subDetail = [];
 
-            if ($kriteria->jenis_kriteria == 'diskrit') {
-                foreach ($kriteria->subKriteria as $sub) {
-                    if (strtolower(trim($nilaiInput)) == strtolower(trim($sub->nama_sub_kriteria))) {
-                        $skorKriteria = (float) $sub->nilai_diskrit; 
-                        Log::info("   -> Matriks μ({$sub->nama_sub_kriteria}): $skorKriteria");
-                        break;
-                    }
-                }
-            } 
-            else {
-                $x = (float) $nilaiInput;
-                $total_mu_bobot = 0;
-                $total_mu = 0;
+            foreach ($kriteria->subKriteria as $sub) {
+                $mu = 0;
+                $db_k = (float) ($sub->nilai_konsekuen ?? 0);
+                
+                // Jika k kosong, gunakan normalisasi x / batas_atas agar skala tetap 0-1
+                $k = ($db_k > 0) ? $db_k : (($x > 0) ? min($x / ((float)$sub->batas_atas ?: 1), 1) : 0);
 
-                foreach ($kriteria->subKriteria as $sub) {
-                    $mu = 0;
-                    $a = (float) $sub->batas_bawah;
-                    $b = (float) $sub->batas_tengah_1;
-                    $c = (float) $sub->batas_tengah_2;
-                    $d = (float) $sub->batas_atas;
+                $a = (float) $sub->batas_bawah;
+                $b = (float) $sub->batas_tengah_1;
+                $c = (float) $sub->batas_tengah_2;
+                $d = (float) $sub->batas_atas;
 
+                // Tahap Fuzzifikasi
+                if ($sub->tipe_kurva == 'diskrit') {
+                    if (strtolower(trim($rawInput)) == strtolower(trim($sub->nama_sub_kriteria))) $mu = 1.0;
+                } else {
                     if ($sub->tipe_kurva == 'bahu_kiri') {
-                        if ($x <= $c) $mu = 1;
+                        if ($x <= $c) $mu = 1.0;
                         elseif ($x > $c && $x < $d) $mu = ($d - $x) / ($d - $c);
-                        $bobot = 0.2;
-                    } 
-                    elseif ($sub->tipe_kurva == 'trapesium') {
+                    } elseif ($sub->tipe_kurva == 'trapesium') {
                         if ($x > $a && $x < $b) $mu = ($x - $a) / ($b - $a);
-                        elseif ($x >= $b && $x <= $c) $mu = 1;
+                        elseif ($x >= $b && $x <= $c) $mu = 1.0;
                         elseif ($x > $c && $x < $d) $mu = ($d - $x) / ($d - $c);
-                        $bobot = 0.6;
-                    } 
-                    elseif ($sub->tipe_kurva == 'bahu_kanan') {
-                        if ($x > $a && $x < $b) $mu = ($x - $a) / ($b - $a);
-                        elseif ($x >= $b) $mu = 1;
-                        $bobot = 1.0;
+                    } elseif ($sub->tipe_kurva == 'bahu_kanan') {
+                        if ($x >= $b) $mu = 1.0;
+                        elseif ($x > $a && $x < $b) $mu = ($x - $a) / ($b - $a);
                     }
-
-                    if ($mu > 0) {
-                        Log::info("   -> Matriks μ({$sub->nama_sub_kriteria}): " . round($mu, 4) . " [Bobot: $bobot]");
-                    }
-                    
-                    $total_mu_bobot += ($mu * $bobot);
-                    $total_mu += $mu;
                 }
 
-                $skorKriteria = $total_mu > 0 ? ($total_mu_bobot / $total_mu) : 0;
+                $subDetail[] = [
+                    'nama' => $sub->nama_sub_kriteria, 'mu' => $mu, 'k' => $k, 
+                    'tipe' => $sub->tipe_kurva, 'a' => $a, 'b' => $b, 'c' => $c, 'd' => $d
+                ];
+                $total_mu_bobot += ($mu * $k);
+                $total_mu += $mu;
             }
 
-            Log::info("   -> Skor Representasi (C) {$kriteria->kode_kriteria}: " . round($skorKriteria, 4));
-            $nilaiC[] = $skorKriteria; 
+            // Direct Evaluation (C) per kriteria
+            $C = $total_mu > 0 ? ($total_mu_bobot / $total_mu) : 0;
+            $detailFuzzifikasi[] = [
+                'kode' => $kriteria->kode_kriteria, 'nama' => $kriteria->nama_kriteria, 
+                'input' => $rawInput, 'x' => $x, 'sub' => $subDetail, 'C' => $C
+            ];
+            $nilaiC[] = $C;
         }
 
-        // =======================================================
-        // B. PEMBENTUKAN ATURAN & PROSES INFERENSI
-        // =======================================================
-        Log::info("B. PEMBENTUKAN ATURAN & INFERENSI (SUGENO ORDE NOL)");
-        Log::info("   Rule Aktual: IF C1 AND C2 AND C3 AND C4 AND C5 THEN Ki");
+        // TAHAP INFERENSI: Alpha (Firing Strength) dan Ki (Konsekuen Kolektif)
+        $alpha = count($nilaiC) > 0 ? min($nilaiC) : 0;
+        $ki = count($nilaiC) > 0 ? (array_sum($nilaiC) / count($nilaiC)) : 0;
+
+        // TAHAP DEFUZZIFIKASI & INTERPRETASI SKALA PRIORITAS
+        $z = $ki;
+        $skorPersen = round($z * 100, 2);
         
-        // 1. Operator Inferensi (Firing Strength)
-        $alpha = min($nilaiC);
-        Log::info("   1. Operator Inferensi (AND -> MIN)");
-        Log::info("      Firing Strength (α) = min(" . implode(", ", array_map(fn($n) => round($n, 2), $nilaiC)) . ")");
-        Log::info("      Hasil α-predikat = " . round($alpha, 4));
+        $skala = self::getSkalaPrioritas($z);
 
-        // 2. Perhitungan Firing Strength / Konsekuen
-        $totalSkorC = array_sum($nilaiC);
-        $ki = $totalSkorC / $jumlahKriteria;
-        Log::info("   2. Penentuan Nilai Konsekuen (Ki)");
-        Log::info("      Ki = (Sum of C) / $jumlahKriteria = " . round($ki, 4));
+        return [
+            'cpcl' => $cpcl,
+            'fuzzifikasi' => $detailFuzzifikasi,
+            'nilaiC' => $nilaiC,
+            'alpha' => $alpha,
+            'ki' => $z,
+            'skor_akhir' => $skorPersen,
+            'status' => $skala['status'],
+            'skala_prioritas' => $skala['prioritas'],
+            'interpretasi' => $skala['interpretasi']
+        ];
+    }
 
-        // =======================================================
-        // C. TAHAP DEFUZZIFIKASI
-        // =======================================================
-        Log::info("C. TAHAP DEFUZZIFIKASI (WEIGHTED AVERAGE)");
-        
-        $z = $ki; // Berdasarkan prinsip 1 Alternatif = 1 Rule
-        $skorAkhir = round($z * 100, 2);
-        $statusKelayakan = $skorAkhir >= 70 ? 'Layak' : 'Tidak Layak';
+    /**
+     * Menentukan Skala Prioritas berdasarkan Nilai Akhir (Z)
+     */
+    private static function getSkalaPrioritas($z)
+    {
+        if ($z > 0.80) {
+            return ['prioritas' => 'Prioritas I', 'interpretasi' => 'Sangat Diprioritaskan', 'status' => 'Layak'];
+        } elseif ($z > 0.60) {
+            return ['prioritas' => 'Prioritas II', 'interpretasi' => 'Diprioritaskan', 'status' => 'Layak'];
+        } elseif ($z > 0.40) {
+            return ['prioritas' => 'Prioritas III', 'interpretasi' => 'Dipertimbangkan', 'status' => 'Tidak Layak'];
+        } else {
+            return ['prioritas' => 'Prioritas IV', 'interpretasi' => 'Tidak Diprioritaskan', 'status' => 'Tidak Layak'];
+        }
+    }
 
-        Log::info("   Hasil Defuzzifikasi (Z) = $z");
-        Log::info("   Skor Akhir (Z * 100) = $skorAkhir %");
-        Log::info("   Kesimpulan = $statusKelayakan");
-
-        // Simpan ke Database
-        DB::table('hasil_fuzzy')->updateOrInsert(
-            ['cpcl_id' => $cpcl->id],
-            [
-                'nilai_alpha' => $alpha, 
-                'nilai_z' => $z,
-                'skor_akhir' => $skorAkhir,
-                'status_kelayakan' => $statusKelayakan,
-                'created_at' => now(),
-                'updated_at' => now()
-            ]
-        );
-
-        Log::info("========================================================");
-        Log::info("END: PERHITUNGAN SELESAI");
-        Log::info("========================================================");
-
-        return true;
+    private static function mapInputToValue($input, $kodeKriteria) {
+        if (is_numeric($input)) return (float) $input;
+        $map = [
+            'C1' => ['Sempit' => 0.2, 'Sedang' => 0.5, 'Luas' => 1.0],
+            'C3' => ['Baru / Pemula' => 1.0, 'Lama' => 4.0, 'Sangat Lama' => 10.0],
+            'C4' => ['Rendah' => 4.0, 'Sedang' => 6.0, 'Tinggi' => 8.0],
+        ];
+        return $map[$kodeKriteria][$input] ?? 0.0;
     }
 }

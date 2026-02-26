@@ -64,7 +64,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::post('/tambah', [CpclController::class, 'store'])->name('cpcl.store');
     Route::get('/cpcl/{id}/edit', [CpclController::class, 'edit'])->name('cpcl.edit');
     Route::put('/cpcl/{id}', [CpclController::class, 'update'])->name('cpcl.update');
-    Route::post('/cpcl/delete/{id}', [CpclController::class, 'destroy'])->name('cpcl.destroy');
+    Route::delete('/cpcl/{id}', [CpclController::class, 'destroy'])
+    ->name('cpcl.destroy');
     Route::get('/hasil', [FuzzyController::class, 'hasil'])->name('hasil.index');
     Route::get('/detail/{id}', [CpclController::class, 'detail'])->name('cpcl.show');
     Route::get('/verifikasi/{id}', [CpclController::class, 'showVerification'])->name('cpcl.verify');
@@ -89,7 +90,8 @@ Route::prefix('uptd')->name('uptd.')->middleware(['auth', 'role:uptd'])->group(f
     Route::get('/cpcl/{id}', [CpclController::class, 'detail'])->name('cpcl.show'); 
     Route::get('/cpcl/{id}/edit', [CpclController::class, 'edit'])->name('cpcl.edit');
     Route::put('/cpcl/{id}', [CpclController::class, 'update'])->name('cpcl.update');
-    Route::post('/cpcl/delete/{id}', [CpclController::class, 'destroy'])->name('cpcl.destroy');
+    Route::delete('/cpcl/{id}', [CpclController::class, 'destroy'])
+    ->name('cpcl.destroy');
 
     // Menu 2: Laporan Akhir
     Route::get('/laporan', [CpclController::class, 'laporan'])->name('laporan.index');

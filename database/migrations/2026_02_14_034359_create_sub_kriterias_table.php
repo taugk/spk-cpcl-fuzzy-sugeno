@@ -36,7 +36,7 @@ return new class extends Migration
             $table->decimal('batas_atas', 10, 2)->nullable();     // Batas d
 
             // PARAMETER DISKRIT - Diubah jadi nullable()
-            $table->decimal('nilai_diskrit', 4, 2)->nullable();
+            $table->decimal('nilai_konsekuen', 4, 2)->nullable();
 
             $table->timestamps();
         });

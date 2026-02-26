@@ -1,234 +1,198 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Perhitungan Fuzzy Sugeno')
+@section('title', 'Laporan Analisis Fuzzy Sugeno')
 
 @section('content')
 <div class="content-wrapper">
     <div class="container-xxl container-p-y">
         
-        <div class="card mb-4 border-0 shadow-sm">
-            <div class="card-body d-flex justify-content-between align-items-center py-3">
+        <div class="card mb-4 border-0 shadow-sm no-print">
+            <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
-                    <h4 class="fw-bold mb-1"><i class="bx bx-spreadsheet me-2 text-primary"></i>Audit Transparansi Perhitungan Fuzzy</h4>
-                    <p class="text-muted mb-0 small">Menampilkan proses matematis Sugeno Orde Nol untuk Alternatif: <strong>{{ $cpcl->nama_kelompok }}</strong></p>
+                    <h4 class="fw-bold mb-1"><i class="bx bx-file-find text-primary me-2"></i>Hasil Analisis Kelayakan</h4>
+                    <p class="text-muted mb-0">Subjek: <span class="badge bg-label-primary fs-6">{{ $hasil['cpcl']->nama_kelompok }}</span></p>
                 </div>
-                <a href="{{ route('admin.cpcl.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bx bx-arrow-back me-1"></i> Kembali ke Daftar
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.cpcl.index') }}" class="btn btn-outline-secondary">
+                        <i class="bx bx-arrow-back me-1"></i> Kembali
+                    </a>
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="bx bx-printer me-1"></i> Cetak Laporan
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div id="loadingStepper" class="card mb-4 border-0 shadow-sm border-start border-primary border-5">
+        {{-- KONFIGURASI MATHJAX --}}
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+        <script>
+            window.MathJax = {
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']],
+                    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+                },
+                svg: { fontCache: 'global' }
+            };
+        </script>
+
+        <div class="card shadow-sm border-0">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle mb-0">
+                    <thead class="table-light text-center">
+                        <tr class="text-uppercase small fw-bold">
+                            <th style="width: 15%">Kriteria & Input</th>
+                            <th style="width: 40%">Langkah 1: Fuzzifikasi ($\mu$)</th>
+                            <th style="width: 15%">Langkah 2: Eval ($C$)</th>
+                            <th style="width: 30%">Langkah 3: Inferensi & Keputusan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($hasil['fuzzifikasi'] as $index => $k)
+                        <tr>
+                            <td class="text-center bg-light-alt">
+                                <span class="fw-bold d-block text-primary">{{ $k['kode'] }}</span>
+                                <small class="text-dark d-block mb-2">{{ $k['nama'] }}</small>
+                                <div class="px-2 py-1 rounded bg-white border small fw-bold">
+                                    Input: {{ $k['input'] }} <br>
+                                    ($x = {{ $k['x'] }}$)
+                                </div>
+                            </td>
+
+                            <td class="p-3">
+                                @foreach($k['sub'] as $s)
+                                <div class="mb-3 p-3 border-start border-primary border-4 bg-light rounded-end shadow-xs">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="fw-bold text-uppercase small">{{ $s['nama'] }}</span>
+                                        <span class="badge bg-white text-primary border shadow-sm fs-6">
+                                            $\mu = {{ number_format($s['mu'], 4) }}$
+                                        </span>
+                                    </div>
+                                    <div class="math-container text-dark small" style="overflow-x: auto;">
+                                        @if($s['tipe'] == 'bahu_kiri')
+                                            $$ \mu(x) = \begin{cases} 1, & x \le {{ $s['c'] }} \\ \frac{ {{ $s['d'] }} - x }{ {{ $s['d'] }} - {{ $s['c'] }} }, & {{ $s['c'] }} < x < {{ $s['d'] }} \\ 0, & x \ge {{ $s['d'] }} \end{cases} $$
+                                        @elseif($s['tipe'] == 'trapesium')
+                                            $$ \mu(x) = \begin{cases} \frac{x - {{ $s['a'] }} }{ {{ $s['b'] }} - {{ $s['a'] }} }, & {{ $s['a'] }} < x < {{ $s['b'] }} \\ 1, & {{ $s['b'] }} \le x \le {{ $s['c'] }} \\ \frac{ {{ $s['d'] }} - x }{ {{ $s['d'] }} - {{ $s['c'] }} }, & {{ $s['c'] }} < x < {{ $s['d'] }} \end{cases} $$
+                                        @elseif($s['tipe'] == 'bahu_kanan')
+                                            $$ \mu(x) = \begin{cases} 0, & x \le {{ $s['a'] }} \\ \frac{x - {{ $s['a'] }} }{ {{ $s['b'] }} - {{ $s['a'] }} }, & {{ $s['a'] }} < x < {{ $s['b'] }} \\ 1, & x \ge {{ $s['b'] }} \end{cases} $$
+                                        @else
+                                            <p class="mb-0 italic text-muted">Diskrit: Bernilai 1 jika cocok, 0 jika tidak.</p>
+                                        @endif
+                                    </div>
+                                    <div class="mt-2 text-muted" style="font-size: 0.75rem;">
+                                        <i class="bx bx-chevron-right"></i> Konsekuen Singleton ($k = {{ number_format($s['k'], 2) }}$)
+                                    </div>
+                                </div>
+                                @endforeach
+                            </td>
+
+                            <td class="text-center">
+                                <div class="p-3 bg-label-primary rounded border border-primary border-dashed">
+                                    <small class="text-muted d-block mb-1 italic">Direct Evaluation</small>
+                                    <div class="fw-bold text-primary">
+                                        $ C = \frac{\sum (\mu_i \cdot k_i)}{\sum \mu_i} $
+                                    </div>
+                                    <h4 class="fw-bold mt-2 text-primary mb-0">{{ number_format($k['C'], 4) }}</h4>
+                                </div>
+                            </td>
+
+                            @if($index == 0)
+                            <td rowspan="5" class="p-4 bg-white align-top">
+                                <div class="sticky-top" style="top: 20px;">
+                                    <div class="p-4 border rounded shadow-sm bg-label-dark">
+                                        <div class="mb-4">
+                                            <label class="small text-muted d-block mb-2">1. Firing Strength ($\alpha$):</label>
+                                            <div class="p-2 bg-white rounded border mb-2">
+                                                $\alpha = \min(C_1, \dots, C_5)$
+                                            </div>
+                                            <h3 class="text-success fw-bold mb-0">{{ number_format($hasil['alpha'], 4) }}</h3>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label class="small text-muted d-block mb-2">2. Konsekuen Kolektif ($K_i$):</label>
+                                            <div class="p-2 bg-white rounded border mb-2">
+                                                $K_i = \frac{\sum C_n}{n}$
+                                            </div>
+                                            <h3 class="text-success fw-bold mb-0">{{ number_format($hasil['ki'], 4) }}</h3>
+                                        </div>
+
+                                        <hr class="my-4">
+
+                                        <div class="text-center mb-4">
+                                            <label class="small text-muted d-block mb-2 text-uppercase fw-bold">Nilai Akhir (Z)</label>
+                                            <div class="display-4 fw-bold text-primary mb-0">{{ $hasil['skor_akhir'] }}%</div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label class="small text-muted d-block mb-1">Skala Prioritas:</label>
+                                            <div class="badge bg-primary w-100 py-3 fs-6 shadow-sm">
+                                                {{ $hasil['skala_prioritas'] }}
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-0">
+                                            <label class="small text-muted d-block mb-1">Keputusan Akhir:</label>
+                                            <div class="p-3 rounded bg-white text-dark fw-bold border border-2 border-primary text-center">
+                                                {{ strtoupper($hasil['interpretasi']) }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            @endif
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card mt-4 border-0 shadow-sm border-start border-primary border-4 no-print">
             <div class="card-body">
-                <h6 class="fw-bold mb-3" id="stepperTitle">
-                    <i class="bx bx-loader-alt bx-spin me-2 text-primary"></i>Engine Fuzzy Sugeno sedang memproses...
-                </h6>
-                <div class="stepper-process">
-                    <div class="step mb-2" id="step1"><i class="bx bx-circle me-2"></i>Tahap 1: Fuzzifikasi (Transformasi Input ke Matriks Keanggotaan)</div>
-                    <div class="step mb-2" id="step2"><i class="bx bx-circle me-2"></i>Tahap 2: Inferensi Fuzzy (Aplikasi Operator MIN / Firing Strength)</div>
-                    <div class="step mb-0" id="step3"><i class="bx bx-circle me-2"></i>Tahap 3: Defuzzifikasi (Perhitungan Skor Akhir & Penentuan Layak)</div>
-                </div>
-            </div>
-        </div>
-
-        <div id="auditArea" class="d-none animate__animated animate__fadeIn">
-            <div class="row">
-                <div class="col-lg-7 mb-4">
-                    <div class="card shadow-none border h-100">
-                        <div class="card-header bg-light py-2 d-flex justify-content-between align-items-center">
-                            <span class="fw-bold small text-uppercase">Visualisasi Kurva (C1 - Luas Lahan)</span>
-                            <span class="badge bg-primary">Input: {{ $cpcl->luas_lahan }} Ha</span>
-                        </div>
-                        <div class="card-body pt-3">
-                            <div style="height: 300px;">
-                                <canvas id="fuzzyChart"></canvas>
-                            </div>
+                <h6 class="fw-bold mb-3"><i class="bx bx-info-circle me-1"></i> Referensi Skala Prioritas (Z)</h6>
+                <div class="row text-center g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">0.81 - 1.00</small>
+                            <span class="fw-bold text-success">Prioritas I</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-lg-5 mb-4">
-                    <div class="card shadow-none border mb-3">
-                        <div class="card-header bg-label-primary py-2 small fw-bold text-uppercase">Langkah 1: Fuzzifikasi & Matriks &mu;</div>
-                        <div class="card-body py-3">
-                            <div id="logFuzzifikasi" class="small">
-                                </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">0.61 - 0.80</small>
+                            <span class="fw-bold text-primary">Prioritas II</span>
                         </div>
                     </div>
-
-                    <div class="card shadow-none border">
-                        <div class="card-header bg-label-warning py-2 small fw-bold text-uppercase">Langkah 2: Inferensi Fuzzy (Sugeno Orde-0)</div>
-                        <div class="card-body py-3">
-                            <div id="logInferensi" class="small font-monospace">
-                                </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">0.41 - 0.60</small>
+                            <span class="fw-bold text-warning">Prioritas III</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-12">
-                    <div class="card border-0 bg-primary text-white shadow-lg">
-                        <div class="card-body row align-items-center text-center text-md-start">
-                            <div class="col-md-4 border-end border-white border-opacity-25 py-3">
-                                <span class="small opacity-75 text-uppercase">Skor Kelayakan (Z)</span>
-                                <h1 class="display-3 fw-bold text-white mb-0" id="finalZ">0.00</h1>
-                            </div>
-                            <div class="col-md-8 p-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bx bx-award fs-2 me-2"></i>
-                                    <h3 class="fw-bold text-white mb-0" id="finalStatus">-</h3>
-                                </div>
-                                <p class="mb-0 opacity-75" id="finalKeterangan">Berdasarkan perhitungan sistem pakar menggunakan metode Sugeno Orde Nol.</p>
-                            </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">≤ 0.40</small>
+                            <span class="fw-bold text-danger">Prioritas IV</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
-<audio id="stepSound" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3"></audio>
-<audio id="successSound" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
-
-@endsection
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-
-<script>
-    let myChart;
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Jalankan simulasi audit bertahap
-        runAuditSimulation();
-    });
-
-    async function runAuditSimulation() {
-        const delay = (ms) => new Promise(res => setTimeout(res, ms));
-        const stepSound = document.getElementById('stepSound');
-        const successSound = document.getElementById('successSound');
-
-        // TAHAP 1: FUZZIFIKASI
-        updateStepUI('step1', 'active');
-        await delay(2000); // Jeda agar admin bisa menjelaskan
-        renderFuzzifikasi();
-        updateStepUI('step1', 'completed');
-        stepSound.play();
-
-        // TAHAP 2: INFERENSI
-        updateStepUI('step2', 'active');
-        await delay(2000);
-        renderInferensi();
-        updateStepUI('step2', 'completed');
-        stepSound.play();
-
-        // TAHAP 3: DEFUZZIFIKASI
-        updateStepUI('step3', 'active');
-        await delay(1500);
-        renderFinal();
-        updateStepUI('step3', 'completed');
-        successSound.play();
-
-        // TAMPILKAN AREA AUDIT
-        await delay(800);
-        document.getElementById('loadingStepper').classList.add('animate__animated', 'animate__fadeOutUp');
-        setTimeout(() => {
-            document.getElementById('loadingStepper').classList.add('d-none');
-            document.getElementById('auditArea').classList.remove('d-none');
-            renderChart({{ $cpcl->luas_lahan }});
-        }, 500);
-    }
-
-    function updateStepUI(stepId, status) {
-        const el = document.getElementById(stepId);
-        if(status === 'active') {
-            el.classList.add('active', 'text-primary', 'fw-bold');
-            el.querySelector('i').className = 'bx bx-loader-alt bx-spin me-2';
-        } else {
-            el.classList.remove('active', 'text-primary');
-            el.classList.add('completed', 'text-success');
-            el.querySelector('i').className = 'bx bxs-check-circle me-2';
-        }
-    }
-
-    function renderFuzzifikasi() {
-        const data = [
-            @foreach($cpcl->penilaian as $p)
-            { kode: '{{ $p->kriteria->kode_kriteria }}', label: '{{ $p->nilai }}', mu: {{ $p->nilai_input }} },
-            @endforeach
-        ];
-
-        let html = `<table class="table table-sm table-borderless mb-0">`;
-        data.forEach(item => {
-            html += `<tr>
-                <td>&mu; ${item.kode} (${item.label})</td>
-                <td>:</td>
-                <td class="fw-bold text-primary">${item.mu.toFixed(2)}</td>
-            </tr>`;
-        });
-        html += `</table>`;
-        document.getElementById('logFuzzifikasi').innerHTML = html;
-    }
-
-    function renderInferensi() {
-        const alpha = {{ $cpcl->hasilFuzzy->nilai_alpha ?? 0 }};
-        const listMu = [@foreach($cpcl->penilaian as $p) {{ $p->nilai_input }}, @endforeach];
-        
-        document.getElementById('logInferensi').innerHTML = `
-            <div class="p-2 bg-light rounded border">
-                <p class="mb-1"><strong>Firing Strength (&alpha;):</strong></p>
-                &alpha;-predikat = Min(${listMu.join(', ')}) <br>
-                &alpha;-predikat = <span class="text-danger fw-bold">${alpha}</span>
-                <hr class="my-2">
-                <p class="mb-0"><strong>Konsekuen (Ki):</strong><br>
-                Ki = (${listMu.join(' + ')}) / ${listMu.length} <br>
-                Ki = <span class="text-primary fw-bold">{{ $cpcl->hasilFuzzy->nilai_z ?? 0 }}</span></p>
-            </div>
-        `;
-    }
-
-    function renderFinal() {
-        const z = {{ $cpcl->hasilFuzzy->nilai_z ?? 0 }};
-        const skor = {{ $cpcl->hasilFuzzy->skor_akhir ?? 0 }};
-        const status = "{{ $cpcl->hasilFuzzy->status_kelayakan }}";
-
-        document.getElementById('finalZ').innerText = z.toFixed(2);
-        document.getElementById('finalStatus').innerText = (status === 'Layak') ? 'LAYAK MENERIMA BANTUAN' : 'TIDAK LAYAK / CADANGAN';
-        document.getElementById('finalKeterangan').innerText = `Hasil akhir perankingan menunjukkan skor ${skor}%. Keputusan ini didasarkan pada perhitungan bobot kriteria terverifikasi.`;
-    }
-
-    function renderChart(inputValue) {
-        const ctx = document.getElementById('fuzzyChart').getContext('2d');
-        if(myChart) myChart.destroy();
-
-        myChart = new Chart(ctx, {
-            type: 'scatter',
-            data: {
-                datasets: [
-                    { label: 'Sempit', data: [{x:0,y:1}, {x:0.25,y:0}], showLine: true, borderColor: '#ff3e1d', backgroundColor: 'rgba(255, 62, 29, 0.1)', fill: true, tension: 0 },
-                    { label: 'Sedang', data: [{x:0.1,y:0}, {x:0.4,y:1}, {x:0.7,y:0}], showLine: true, borderColor: '#ffab00', backgroundColor: 'rgba(255, 171, 0, 0.1)', fill: true, tension: 0 },
-                    { label: 'Luas', data: [{x:0.6,y:0}, {x:1.0,y:1}, {x:1.5,y:1}], showLine: true, borderColor: '#71dd37', backgroundColor: 'rgba(113, 221, 55, 0.1)', fill: true, tension: 0 },
-                    { label: 'Posisi Input Admin', data: [{x:inputValue, y:0}, {x:inputValue, y:1}], showLine: true, borderDash: [5, 5], borderColor: '#000', pointRadius: 5, pointBackgroundColor: '#000' }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { min: 0, max: 1.1, title: { display: true, text: 'Derajat Keanggotaan (mu)' } },
-                    x: { min: 0, max: 1.5, title: { display: true, text: 'Luas Lahan (Ha)' } }
-                }
-            }
-        });
-    }
-</script>
-
 <style>
-    .stepper-process .step { color: #a1acb8; }
-    .bg-label-primary { background-color: #e7e7ff; color: #696cff; }
-    .bg-label-warning { background-color: #fff2d6; color: #ffab00; }
-    .completed { transition: all 0.5s ease; }
+    .bg-light-alt { background-color: #f8f9fa; }
+    .bg-label-dark { background-color: #f2f2f3; }
+    .italic { font-style: italic; }
+    .shadow-xs { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); }
+    
+    @media print {
+        .no-print, .btn, .layout-navbar, .layout-menu { display: none !important; }
+        .content-wrapper { margin: 0 !important; padding: 0 !important; }
+        .card { border: 1px solid #eee !important; box-shadow: none !important; }
+        .table { width: 100% !important; border-collapse: collapse !important; }
+        body { background: white !important; }
+        .sticky-top { position: static !important; }
+    }
 </style>
-@endpush
+@endsection
