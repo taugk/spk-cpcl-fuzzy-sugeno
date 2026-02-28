@@ -29,7 +29,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
 // =========================================================================
-//  GROUP 1: KHUSUS ADMIN (Tetap Lengkap)
+//  GROUP 1: KHUSUS ADMIN 
 // =========================================================================
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
     
