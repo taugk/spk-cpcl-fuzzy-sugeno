@@ -4,39 +4,122 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cpcl;
-use App\Models\Kriteria;
+use App\Models\HasilFuzzy;
 use App\Services\FuzzySugenoService;
 use Illuminate\Http\Request;
 
 class FuzzyController extends Controller
 {
-    public function kriteria(){
+    /**
+     * Tampilkan halaman kriteria.
+     */
+    public function kriteria()
+    {
         return view('admin.fuzzy-sugeno.kriteria.index');
     }
 
-    public function subKriteria(){
+    /**
+     * Tampilkan halaman sub-kriteria.
+     */
+    public function subKriteria()
+    {
         return view('admin.fuzzy-sugeno.sub-kriteria.index');
     }
 
-public function perhitungan($id = null)
-{
-    if ($id) {
-        $cpcl = Cpcl::with(['penilaian.kriteria'])
-                    ->findOrFail($id);
-    } else {
-        $cpcl = Cpcl::with(['penilaian.kriteria'])
-                    ->latest('updated_at')
-                    ->first();
+    /**
+     * Tampilkan halaman perhitungan dan ranking.
+     */
+    public function perhitungan(Request $request)
+    {
+        $periode = $request->get('periode', date('Y'));
 
-        if (!$cpcl) {
-            return redirect()->route('admin.cpcl.index')
-                ->with('error', 'Belum ada data yang diverifikasi.');
+        // Ambil data CPCL yang sudah verifikasi tapi belum dihitung/masuk ke tabel hasil_fuzzy
+        // Pastikan model Cpcl memiliki relasi 'hasilFuzzy'
+        $cpclVerifiedIsNotCount = Cpcl::where('status', 'terverifikasi')
+            ->whereYear('created_at', $periode)
+            ->whereDoesntHave('hasilFuzzy') 
+            ->count();
+
+        // Ambil daftar tahun yang tersedia
+        $periodeList = HasilFuzzy::join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id')
+            ->selectRaw('YEAR(cpcl.created_at) as tahun')
+            ->distinct()
+            ->orderByDesc('tahun')
+            ->pluck('tahun');
+
+        if (!$periodeList->contains(date('Y'))) {
+            $periodeList->prepend(date('Y'));
+        }
+
+        // Ambil hasil ranking
+        $hasilRanking = HasilFuzzy::with('cpcl')
+            ->join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id')
+            ->whereYear('cpcl.created_at', $periode)
+            ->whereNotNull('hasil_fuzzy.ranking')
+            ->orderBy('hasil_fuzzy.ranking')
+            ->select('hasil_fuzzy.*')
+            ->get();
+
+        // Hitung total CPCL terverifikasi
+        $totalTerverifikasi = Cpcl::where('status', 'terverifikasi')
+            ->whereYear('created_at', $periode)
+            ->count();
+
+        // Total yang belum dihitung (bisa menggunakan variabel di atas atau hitungan manual)
+        $totalBelumDihitung = $cpclVerifiedIsNotCount;
+
+        return view('admin.fuzzy-sugeno.perhitungan.index', compact(
+            'hasilRanking', 
+            'periode', 
+            'periodeList',
+            'totalTerverifikasi', 
+            'totalBelumDihitung',
+            'cpclVerifiedIsNotCount'
+        ));
+    }
+
+    /**
+     * Proses hitung semua CPCL terverifikasi dan simpan ranking.
+     */
+    public function proses(Request $request)
+    {
+        $request->validate([
+            'periode' => 'required|digits:4|integer',
+        ]);
+
+        $periode = $request->input('periode');
+
+        try {
+            $ranked = FuzzySugenoService::hitungSemuaDanRanking($periode);
+
+            if ($ranked->isEmpty()) {
+                return back()->with('warning', 'Tidak ada CPCL berstatus "terverifikasi" untuk periode ' . $periode . '.');
+            }
+
+            return redirect()
+                ->route('admin.perhitungan.index', ['periode' => $periode])
+                ->with('success', "Berhasil menghitung dan meranking {$ranked->count()} CPCL untuk periode {$periode}.");
+
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal memproses: ' . $e->getMessage());
         }
     }
 
-    // 🔥 PANGGIL ENGINE PERHITUNGAN
-    $hasil = FuzzySugenoService::hitung($cpcl->id);
+    /**
+     * Tampilkan detail langkah-langkah fuzzy untuk 1 CPCL.
+     */
+    public function detail(int $id)
+    {
+        $cpcl = Cpcl::findOrFail($id);
 
-    return view('admin.fuzzy-sugeno.perhitungan.index', compact('cpcl', 'hasil'));
-}
+        if ($cpcl->status !== 'terverifikasi') {
+            return redirect()
+                ->route('admin.perhitungan.index')
+                ->with('warning', "CPCL #{$id} ({$cpcl->nama_kelompok}) belum terverifikasi.");
+        }
+
+        $hasil = FuzzySugenoService::hitung($id);
+
+        return view('admin.fuzzy-sugeno.perhitungan.detail', compact('hasil'));
+    }
 }

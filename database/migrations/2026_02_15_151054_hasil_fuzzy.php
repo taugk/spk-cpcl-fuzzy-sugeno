@@ -20,7 +20,10 @@ return new class extends Migration
             $table->decimal('nilai_z', 8, 4)->nullable();     // Menyimpan hasil pembagian (ki)
             
             $table->decimal('skor_akhir', 8, 2);              // Nilai akhir (0-100)
-            $table->string('status_kelayakan');               // Layak / Tidak Layak
+            $table->string('status_kelayakan');               
+            $table->integer('ranking')->nullable();
+            $table->string('skala_prioritas')->nullable();
+            $table->string('interpretasi')->nullable();
             
             $table->timestamps();
         });

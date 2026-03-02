@@ -1,323 +1,254 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Laporan Analisis Fuzzy Sugeno')
+@section('title', 'Perhitungan & Ranking CPCL')
 
 @section('content')
 <div class="content-wrapper">
     <div class="container-xxl container-p-y">
 
         {{-- HEADER --}}
-        <div class="card mb-4 border-0 shadow-sm no-print">
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h4 class="fw-bold mb-1">
-                        <i class="bx bx-file-find text-primary me-2"></i>Hasil Analisis Kelayakan
-                    </h4>
-                    <p class="text-muted mb-0">
-                        Subjek: <span class="badge bg-label-primary fs-6">{{ $hasil['cpcl']->nama_kelompok }}</span>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">
+                    <i class="bx bx-trophy text-warning me-2"></i>Perhitungan & Ranking Kelayakan CPCL
+                </h4>
+                <p class="text-muted mb-0">Hasil Fuzzy Sugeno Orde Nol — diurutkan berdasarkan skor tertinggi</p>
+            </div>
+            <button onclick="window.print()" class="btn btn-outline-secondary no-print">
+                <i class="bx bx-printer me-1"></i> Cetak
+            </button>
+        </div>
+
+        {{-- FLASH MESSAGES --}}
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                <i class="bx bx-check-circle me-1"></i> {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        @if(session('warning'))
+            <div class="alert alert-warning alert-dismissible fade show">
+                <i class="bx bx-error me-1"></i> {{ session('warning') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                <i class="bx bx-x-circle me-1"></i> {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        {{-- PANEL KONTROL --}}
+        <div class="card border-0 shadow-sm mb-4 no-print">
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+
+                    {{-- Filter periode --}}
+                    <div class="col-12 col-md-3">
+                        <form method="GET" action="{{ route('admin.perhitungan.index') }}">
+                            <label class="form-label fw-semibold small">Filter Periode</label>
+                            <select name="periode" class="form-select" onchange="this.form.submit()">
+                                @foreach($periodeList as $p)
+                                    <option value="{{ $p }}" {{ $periode == $p ? 'selected' : '' }}>
+                                        Tahun {{ $p }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    </div>
+
+                    {{-- Tombol hitung semua --}}
+                    <div class="col-12 col-md-6">
+                        <form method="POST" action="{{ route('admin.perhitungan.proses') }}"
+                              onsubmit="return confirm('Proses hitung {{ $totalTerverifikasi }} CPCL terverifikasi periode {{ $periode }}?\n\nData ranking yang ada akan diperbarui.')">
+                            @csrf
+                            <label class="form-label fw-semibold small">Proses Hitung Semua CPCL Terverifikasi</label>
+                            <div class="input-group">
+                                <input type="number" name="periode" class="form-control"
+                                       value="{{ $periode }}" min="2020" max="2099">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bx bx-calculator me-1"></i> Hitung & Ranking
+                                </button>
+                            </div>
+                            <small class="text-muted mt-1 d-block">
+                                <i class="bx bx-info-circle me-1"></i>
+                                <strong>{{ $totalTerverifikasi }}</strong> CPCL terverifikasi periode {{ $periode }}.
+                                @if($totalBelumDihitung > 0)
+                                    <span class="text-warning fw-bold">{{ $totalBelumDihitung }} belum dihitung.</span>
+                                @else
+                                    <span class="text-success">Semua sudah dihitung.</span>
+                                @endif
+                            </small>
+                        </form>
+                    </div>
+
+                    {{-- Statistik ringkas --}}
+                    @if($hasilRanking->isNotEmpty())
+                    <div class="col-12 col-md-3">
+                        <div class="row g-2 text-center">
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-label-success border">
+                                    <div class="fw-bold fs-5 text-success">
+                                        {{ $hasilRanking->where('status_kelayakan', 'Layak')->count() }}
+                                    </div>
+                                    <small class="text-muted">Layak</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 rounded bg-label-danger border">
+                                    <div class="fw-bold fs-5 text-danger">
+                                        {{ $hasilRanking->where('status_kelayakan', 'Tidak Layak')->count() }}
+                                    </div>
+                                    <small class="text-muted">Tidak Layak</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        {{-- TABEL RANKING --}}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-3">
+                <h6 class="fw-bold mb-0">
+                    <i class="bx bx-list-ol me-1"></i>
+                    Hasil Ranking — Periode {{ $periode }}
+                    <span class="badge bg-label-primary ms-2">{{ $hasilRanking->count() }} CPCL</span>
+                </h6>
+            </div>
+
+            @if($hasilRanking->isEmpty())
+                <div class="card-body text-center py-5">
+                    <i class="bx bx-calculator fs-1 text-muted d-block mb-3"></i>
+                    <h6 class="text-muted">Belum ada data ranking untuk periode {{ $periode }}</h6>
+                    <p class="text-muted small mb-0">
+                        Klik tombol <strong>"Hitung &amp; Ranking"</strong> untuk memproses
+                        {{ $totalTerverifikasi }} CPCL terverifikasi.
                     </p>
                 </div>
-                <div class="d-flex gap-2">
-                    <a href="{{ route('admin.cpcl.index') }}" class="btn btn-outline-secondary">
-                        <i class="bx bx-arrow-back me-1"></i> Kembali
-                    </a>
-                    <button onclick="window.print()" class="btn btn-primary">
-                        <i class="bx bx-printer me-1"></i> Cetak Laporan
-                    </button>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr class="text-uppercase small fw-bold text-muted">
+                                <th class="text-center" style="width:5%">Rank</th>
+                                <th style="width:23%">Kelompok Tani</th>
+                                <th style="width:10%">Bidang</th>
+                                <th class="text-center" style="width:9%">z*</th>
+                                <th class="text-center" style="width:13%">Skor</th>
+                                <th class="text-center" style="width:15%">Skala Prioritas</th>
+                                <th class="text-center" style="width:10%">Status</th>
+                                <th class="text-center no-print" style="width:8%">Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($hasilRanking as $h)
+                            @php
+                                $rank       = $h->ranking;
+                                $rowClass   = $rank === 1 ? 'table-warning' : '';
+                                $badgeClass = match($h->skala_prioritas ?? '') {
+                                    'Prioritas I'   => 'bg-success',
+                                    'Prioritas II'  => 'bg-primary',
+                                    'Prioritas III' => 'bg-warning text-dark',
+                                    default         => 'bg-secondary',
+                                };
+                            @endphp
+                            <tr class="{{ $rowClass }}">
+
+                                {{-- Rank --}}
+                                <td class="text-center fw-bold">
+                                    @if($rank == 1) <span class="fs-5">🥇</span>
+                                    @elseif($rank == 2) <span class="fs-5">🥈</span>
+                                    @elseif($rank == 3) <span class="fs-5">🥉</span>
+                                    @else <span class="badge bg-label-secondary">#{{ $rank }}</span>
+                                    @endif
+                                </td>
+
+                                {{-- Kelompok --}}
+                                <td>
+                                    <div class="fw-semibold">{{ $h->cpcl->nama_kelompok }}</div>
+                                    <small class="text-muted">
+                                        {{ $h->cpcl->nama_ketua }} · {{ $h->cpcl->lokasi ?? '-' }}
+                                    </small>
+                                </td>
+
+                                {{-- Bidang --}}
+                                <td>
+                                    <span class="badge bg-label-info">{{ $h->cpcl->bidang ?? '-' }}</span>
+                                </td>
+
+                                {{-- z* --}}
+                                <td class="text-center fw-bold text-primary">
+                                    {{ number_format($h->nilai_z, 4) }}
+                                </td>
+
+                                {{-- Skor % --}}
+                                <td class="text-center">
+                                    <div class="fw-bold mb-1">{{ $h->skor_akhir }}%</div>
+                                    <div class="progress" style="height:6px;">
+                                        <div class="progress-bar
+                                            {{ $h->skor_akhir >= 80 ? 'bg-success' : ($h->skor_akhir >= 60 ? 'bg-primary' : ($h->skor_akhir >= 40 ? 'bg-warning' : 'bg-danger')) }}"
+                                             style="width:{{ $h->skor_akhir }}%">
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Skala prioritas --}}
+                                <td class="text-center">
+                                    <span class="badge {{ $badgeClass }} py-2 px-3">
+                                        {{ $h->skala_prioritas ?? '-' }}
+                                    </span>
+                                    <div class="small text-muted mt-1 fst-italic">
+                                        {{ $h->interpretasi ?? '' }}
+                                    </div>
+                                </td>
+
+                                {{-- Status layak --}}
+                                <td class="text-center">
+                                    <span class="badge {{ $h->status_kelayakan === 'Layak' ? 'bg-success' : 'bg-danger' }} py-2 px-3">
+                                        {{ $h->status_kelayakan }}
+                                    </span>
+                                </td>
+
+                                {{-- Tombol detail --}}
+                                <td class="text-center no-print">
+                                    <a href="{{ route('admin.perhitungan.detail', $h->cpcl_id) }}"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Lihat langkah perhitungan fuzzy">
+                                        <i class="bx bx-file-find"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </div>
 
-        {{-- MATHJAX --}}
-        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-        <script>
-            window.MathJax = {
-                tex: {
-                    inlineMath: [['$', '$'], ['\\(', '\\)']],
-                    displayMath: [['$$', '$$'], ['\\[', '\\]']]
-                },
-                svg: { fontCache: 'global' }
-            };
-        </script>
-
-        {{-- ================================================================ --}}
-        {{-- STEP 1: FUZZIFIKASI                                              --}}
-        {{-- ================================================================ --}}
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h5 class="fw-bold mb-0">
-                    <span class="badge bg-primary me-2">Step 1</span> Fuzzifikasi — Derajat Keanggotaan (μ)
-                </h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle mb-0">
-                    <thead class="table-light text-center">
-                        <tr class="text-uppercase small fw-bold">
-                            <th style="width: 18%">Kriteria & Input</th>
-                            <th>Himpunan Fuzzy & Fungsi Keanggotaan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($hasil['fuzzifikasi'] as $k)
-                        <tr>
-                            {{-- Kolom kiri: info kriteria --}}
-                            <td class="text-center bg-light">
-                                <span class="fw-bold d-block text-primary fs-6">{{ $k['kode'] }}</span>
-                                <small class="text-dark d-block mb-2">{{ $k['nama'] }}</small>
-
-                                {{-- Jenis + sumber data --}}
-                                <div class="mb-2">
-                                    @if($k['jenis'] === 'kontinu')
-                                        <span class="badge bg-label-info">Kontinu</span>
-                                        <div class="mt-1" style="font-size:0.7rem; color:#6c757d;">
-                                            <i class="bx bx-data"></i> dari kolom: <code>{{ $k['mapping_field'] }}</code>
-                                        </div>
-                                    @else
-                                        <span class="badge bg-label-warning">Diskrit</span>
-                                        <div class="mt-1" style="font-size:0.7rem; color:#6c757d;">
-                                            <i class="bx bx-edit"></i> input penilaian
-                                        </div>
-                                    @endif
-                                </div>
-
-                                {{-- Nilai input --}}
-                                <div class="px-2 py-2 rounded bg-white border small">
-                                    @if($k['jenis'] === 'kontinu')
-                                        <span class="text-muted d-block" style="font-size:0.7rem;">Nilai riil:</span>
-                                        <span class="fw-bold text-primary fs-6">{{ $k['x'] ?? '-' }}</span>
-                                    @else
-                                        <span class="text-muted d-block" style="font-size:0.7rem;">Pilihan:</span>
-                                        <span class="fw-bold text-primary">{{ $k['input'] ?: '-' }}</span>
-                                    @endif
-                                </div>
-                            </td>
-
-                            {{-- Kolom kanan: tiap himpunan (key: 'himpunan') --}}
-                            <td class="p-3">
-                                <div class="row g-3">
-                                    @foreach($k['himpunan'] as $s)
-                                    @php
-                                        $isAktif = $s['mu'] > 0;
-                                    @endphp
-                                    <div class="col-12 col-md-4">
-                                        <div class="p-3 rounded border h-100
-                                            {{ $isAktif ? 'border-success border-2 bg-label-success' : 'border-light bg-light' }}">
-
-                                            {{-- Header himpunan --}}
-                                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                                <span class="fw-bold small text-uppercase">{{ $s['nama'] }}</span>
-                                                <span class="badge {{ $isAktif ? 'bg-success' : 'bg-secondary' }} fs-6">
-                                                    μ = {{ number_format($s['mu'], 4) }}
-                                                </span>
-                                            </div>
-
-                                            {{-- Formula fungsi keanggotaan --}}
-                                            <div class="math-container small text-dark" style="overflow-x:auto; font-size:0.78rem;">
-                                                @if($s['tipe'] === 'bahu_kiri')
-                                                    $$ \mu(x) = \begin{cases}
-                                                        1, & x \le {{ $s['c'] }} \\
-                                                        \dfrac{ {{ $s['d'] }} - x }{ {{ $s['d'] }} - {{ $s['c'] }} }, & {{ $s['c'] }} < x < {{ $s['d'] }} \\
-                                                        0, & x \ge {{ $s['d'] }}
-                                                    \end{cases} $$
-                                                @elseif($s['tipe'] === 'trapesium')
-                                                    $$ \mu(x) = \begin{cases}
-                                                        \dfrac{x - {{ $s['a'] }}}{ {{ $s['b'] }} - {{ $s['a'] }} }, & {{ $s['a'] }} < x < {{ $s['b'] }} \\
-                                                        1, & {{ $s['b'] }} \le x \le {{ $s['c'] }} \\
-                                                        \dfrac{ {{ $s['d'] }} - x }{ {{ $s['d'] }} - {{ $s['c'] }} }, & {{ $s['c'] }} < x < {{ $s['d'] }}
-                                                    \end{cases} $$
-                                                @elseif($s['tipe'] === 'bahu_kanan')
-                                                    $$ \mu(x) = \begin{cases}
-                                                        0, & x \le {{ $s['a'] }} \\
-                                                        \dfrac{x - {{ $s['a'] }}}{ {{ $s['b'] }} - {{ $s['a'] }} }, & {{ $s['a'] }} < x < {{ $s['b'] }} \\
-                                                        1, & x \ge {{ $s['b'] }}
-                                                    \end{cases} $$
-                                                @else
-                                                    <p class="mb-0 text-muted fst-italic small">
-                                                        Diskrit: μ = 1 jika input = "<strong>{{ $s['nama'] }}</strong>", μ = 0 jika tidak.
-                                                    </p>
-                                                @endif
-                                            </div>
-
-                                            {{-- Konsekuen --}}
-                                            <div class="mt-2 pt-2 border-top text-muted" style="font-size:0.75rem;">
-                                                <i class="bx bx-tag-alt me-1"></i>
-                                                Konsekuen: <strong class="text-dark">k = {{ number_format($s['k'], 2) }}</strong>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endforeach
-                                </div>
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        {{-- ================================================================ --}}
-        {{-- STEP 2 & 3: RULE BASE + FIRING STRENGTH                         --}}
-        {{-- ================================================================ --}}
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h5 class="fw-bold mb-0">
-                    <span class="badge bg-warning text-dark me-2">Step 2 & 3</span>
-                    Rule Base & Firing Strength (α = MIN)
-                </h5>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle mb-0">
-                    <thead class="table-light text-center">
-                        <tr class="text-uppercase small fw-bold">
-                            <th style="width: 8%">Rule</th>
-                            <th>Anteceden (IF ... AND ...)</th>
-                            <th style="width: 12%">α = MIN(μ)</th>
-                            <th style="width: 12%">z Rule (avg k)</th>
-                            <th style="width: 14%">α × z</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($hasil['rules'] as $rule)
-                        <tr>
-                            <td class="text-center fw-bold text-primary">{{ $rule['rule_id'] }}</td>
-
-                            {{-- Anteceden --}}
-                            <td>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach($rule['anteceden'] as $i => $ant)
-                                        @if($i > 0)
-                                            <span class="badge bg-label-dark align-self-center">AND</span>
-                                        @endif
-                                        <span class="badge bg-label-primary py-2 px-3">
-                                            <span class="text-muted small">{{ $ant['kriteria'] }}</span>
-                                            = {{ $ant['himpunan'] }}
-                                            <span class="ms-1 text-primary">(μ={{ number_format($ant['mu'], 4) }}, k={{ number_format($ant['k'], 2) }})</span>
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </td>
-
-                            {{-- Alpha --}}
-                            <td class="text-center">
-                                <span class="badge bg-success fs-6 py-2 px-3">
-                                    {{ number_format($rule['alpha'], 4) }}
-                                </span>
-                                <div class="text-muted" style="font-size:0.7rem;">
-                                    MIN({{ implode(', ', array_map(fn($a) => number_format($a['mu'], 4), $rule['anteceden'])) }})
-                                </div>
-                            </td>
-
-                            {{-- z Rule --}}
-                            <td class="text-center fw-bold">{{ number_format($rule['z_rule'], 4) }}</td>
-
-                            {{-- alpha × z --}}
-                            <td class="text-center fw-bold text-primary">{{ number_format($rule['alpha_x_z'], 4) }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                <i class="bx bx-error-circle fs-4 d-block mb-2"></i>
-                                Tidak ada rule yang terbentuk. Periksa nilai input dan konfigurasi sub kriteria.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                    @if(count($hasil['rules']) > 0)
-                    <tfoot class="table-light fw-bold">
-                        <tr>
-                            <td colspan="2" class="text-end">Jumlah (Σ):</td>
-                            <td class="text-center text-success">{{ number_format($hasil['sum_alpha'], 4) }}</td>
-                            <td></td>
-                            <td class="text-center text-primary">{{ number_format($hasil['sum_alpha_z'], 4) }}</td>
-                        </tr>
-                    </tfoot>
-                    @endif
-                </table>
-            </div>
-        </div>
-
-        {{-- ================================================================ --}}
-        {{-- STEP 4: DEFUZZIFIKASI + HASIL AKHIR                             --}}
-        {{-- ================================================================ --}}
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white border-bottom py-3">
-                <h5 class="fw-bold mb-0">
-                    <span class="badge bg-danger me-2">Step 4</span>
-                    Defuzzifikasi — Weighted Average Sugeno
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row g-4 align-items-center">
-
-                    {{-- Formula --}}
-                    <div class="col-12 col-md-5">
-                        <div class="p-4 bg-light rounded border">
-                            <p class="text-muted small mb-2 fw-bold text-uppercase">Formula Weighted Average:</p>
-                            <div class="text-center">
-                                $$ z^* = \frac{\sum_{i=1}^{n} \alpha_i \cdot z_i}{\sum_{i=1}^{n} \alpha_i} $$
-                            </div>
-                            <hr>
-                            <div class="text-center">
-                                $$ z^* = \frac{ {{ number_format($hasil['sum_alpha_z'], 4) }} }{ {{ number_format($hasil['sum_alpha'], 4) }} } = {{ number_format($hasil['z'], 4) }} $$
-                            </div>
+                {{-- Footer statistik --}}
+                <div class="card-footer bg-white border-top py-3 no-print">
+                    <div class="row text-center g-3">
+                        <div class="col-4">
+                            <small class="text-muted d-block">Rata-rata Skor</small>
+                            <strong class="text-primary">{{ number_format($hasilRanking->avg('skor_akhir'), 2) }}%</strong>
                         </div>
-                    </div>
-
-                    {{-- Hasil --}}
-                    <div class="col-12 col-md-7">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="p-3 border rounded text-center bg-label-primary">
-                                    <small class="text-muted d-block mb-1">Σ (α × z)</small>
-                                    <h4 class="fw-bold text-primary mb-0">{{ number_format($hasil['sum_alpha_z'], 4) }}</h4>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="p-3 border rounded text-center bg-label-info">
-                                    <small class="text-muted d-block mb-1">Σ α</small>
-                                    <h4 class="fw-bold text-info mb-0">{{ number_format($hasil['sum_alpha'], 4) }}</h4>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="p-3 border rounded text-center bg-label-success">
-                                    <small class="text-muted d-block mb-1">Nilai z* (crisp)</small>
-                                    <h4 class="fw-bold text-success mb-0">{{ number_format($hasil['z'], 4) }}</h4>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="p-3 border rounded text-center bg-label-warning">
-                                    <small class="text-muted d-block mb-1">Skor Akhir</small>
-                                    <h4 class="fw-bold text-warning mb-0">{{ $hasil['skor_akhir'] }}%</h4>
-                                </div>
-                            </div>
-
-                            {{-- Keputusan --}}
-                            <div class="col-12">
-                                <div class="p-3 rounded border border-2
-                                    {{ in_array($hasil['status_kelayakan'], ['Layak']) ? 'border-success bg-label-success' : 'border-danger bg-label-danger' }}">
-                                    <div class="row align-items-center">
-                                        <div class="col">
-                                            <small class="text-muted d-block">Skala Prioritas</small>
-                                            <h5 class="fw-bold mb-0">{{ $hasil['skala_prioritas'] }}</h5>
-                                            <small class="fst-italic">{{ $hasil['interpretasi'] }}</small>
-                                        </div>
-                                        <div class="col-auto">
-                                            <span class="badge fs-5 py-2 px-4
-                                                {{ $hasil['status_kelayakan'] === 'Layak' ? 'bg-success' : 'bg-danger' }}">
-                                                {{ strtoupper($hasil['status_kelayakan']) }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Skor Tertinggi</small>
+                            <strong class="text-success">{{ number_format($hasilRanking->max('skor_akhir'), 2) }}%</strong>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted d-block">Skor Terendah</small>
+                            <strong class="text-danger">{{ number_format($hasilRanking->min('skor_akhir'), 2) }}%</strong>
                         </div>
                     </div>
                 </div>
-            </div>
+            @endif
         </div>
 
-        {{-- REFERENSI SKALA --}}
-        <div class="card mt-2 border-0 shadow-sm no-print">
+        {{-- Referensi skala --}}
+        <div class="card mt-4 border-0 shadow-sm no-print">
             <div class="card-body">
                 <h6 class="fw-bold mb-3"><i class="bx bx-info-circle me-1"></i> Referensi Skala Prioritas (z*)</h6>
                 <div class="row text-center g-3">
@@ -357,15 +288,11 @@
 </div>
 
 <style>
-    .bg-light-alt { background-color: #f8f9fa; }
-    .italic { font-style: italic; }
-
     @media print {
-        .no-print, .btn, .layout-navbar, .layout-menu { display: none !important; }
-        .content-wrapper { margin: 0 !important; padding: 0 !important; }
-        .card { border: 1px solid #eee !important; box-shadow: none !important; page-break-inside: avoid; }
-        .table { width: 100% !important; border-collapse: collapse !important; }
-        body { background: white !important; }
+        .no-print, .layout-navbar, .layout-menu { display: none !important; }
+        .content-wrapper { margin: 0 !important; }
+        .card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        .table { font-size: 0.8rem !important; }
     }
 </style>
 @endsection

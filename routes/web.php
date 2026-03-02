@@ -55,6 +55,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/aturan', [FuzzyController::class, 'rule'])->name('aturan.index'); 
     
     Route::get('/perhitungan/{id?}', [FuzzyController::class, 'perhitungan'])->name('perhitungan.index');
+    Route::post('/perhitungan/proses', [FuzzyController::class, 'proses'])->name('perhitungan.proses');
+    Route::get('/perhitungan/detail/{id}', [FuzzyController::class, 'detail'])->name('perhitungan.detail');
     
     // Fitur Lain
     Route::get('/cpcl', [CpclController::class, 'index'])->name('cpcl.index'); 

@@ -7,17 +7,17 @@ use App\Models\Kriteria;
 use App\Models\HasilFuzzy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class FuzzySugenoService
 {
     // =========================================================================
-    // PUBLIC: Hitung + Simpan ke DB
+    // 1. PUBLIC: Hitung + Simpan per ID
     // =========================================================================
-
     public static function hitungDanSimpan(int $cpcl_id): array
     {
-        Log::info("=== START: Hitung dan Simpan Fuzzy Sugeno untuk CPCL ID: {$cpcl_id} ===");
-
+        Log::info("=== START: Hitung dan Simpan Fuzzy Sugeno | CPCL ID: {$cpcl_id} ===");
+        
         $hasil = self::hitung($cpcl_id);
 
         HasilFuzzy::updateOrCreate(
@@ -27,182 +27,164 @@ class FuzzySugenoService
                 'nilai_z'          => $hasil['z'],
                 'skor_akhir'       => $hasil['skor_akhir'],
                 'status_kelayakan' => $hasil['status_kelayakan'],
+                'skala_prioritas'  => $hasil['skala_prioritas'],
+                'interpretasi'     => $hasil['interpretasi'],
             ]
         );
-
-        Log::info("=== END: Hitung dan Simpan Selesai untuk CPCL ID: {$cpcl_id} ===", [
-            'skor_akhir' => $hasil['skor_akhir'],
-            'status'     => $hasil['status_kelayakan'],
-        ]);
 
         return $hasil;
     }
 
     // =========================================================================
-    // CORE: Fuzzy Sugeno Orde Nol — Direct Alternative Rule Base
+    // 2. PUBLIC: Hitung SEMUA CPCL untuk Ranking
     // =========================================================================
+    public static function hitungSemuaDanRanking(?string $periode = null): Collection
+    {
+        $query = Cpcl::where('status', 'terverifikasi');
+        if ($periode) {
+            $query->whereYear('created_at', $periode);
+        }
+        $cpclList = $query->get();
 
+        Log::info("=== START: Batch Hitung Semua CPCL ===", ['total' => $cpclList->count()]);
+
+        $hasilList = [];
+        foreach ($cpclList as $cpcl) {
+            try {
+                $hasil = self::hitung($cpcl->id);
+                // Gabungkan data perhitungan dengan ID CPCL
+                $hasilList[] = array_merge(['cpcl_id' => $cpcl->id], $hasil);
+            } catch (\Exception $e) {
+                Log::error("Gagal hitung CPCL ID {$cpcl->id}: " . $e->getMessage());
+            }
+        }
+
+        // Urutkan berdasarkan skor_akhir tertinggi (Descending)
+        $ranked = collect($hasilList)->sortByDesc('skor_akhir')->values();
+
+        // Simpan ke DB dalam transaksi agar aman
+        DB::transaction(function () use ($ranked) {
+            foreach ($ranked as $rank => $item) {
+                HasilFuzzy::updateOrCreate(
+                    ['cpcl_id' => $item['cpcl_id']],
+                    [
+                        'nilai_alpha'      => $item['alpha'],
+                        'nilai_z'          => $item['z'],
+                        'skor_akhir'       => $item['skor_akhir'],
+                        'status_kelayakan' => $item['status_kelayakan'],
+                        'skala_prioritas'  => $item['skala_prioritas'],
+                        'interpretasi'     => $item['interpretasi'],
+                        'ranking'          => $rank + 1, // Menyimpan peringkat
+                    ]
+                );
+            }
+        });
+
+        return $ranked;
+    }
+
+    // =========================================================================
+    // 3. CORE: Fuzzy Sugeno Logic
+    // =========================================================================
     public static function hitung(int $cpcl_id): array
     {
-        Log::debug("Memulai proses hitung() untuk CPCL ID: {$cpcl_id}");
-
         $cpcl         = Cpcl::findOrFail($cpcl_id);
         $kriteriaList = Kriteria::with('subKriteria')->orderBy('id')->get();
+        $fuzzifikasi  = [];
 
-        // ── STEP 1: Fuzzifikasi ──────────────────────────────────────────────
-        Log::debug("--- STEP 1: Fuzzifikasi ---");
-
-        $fuzzifikasi = [];
-
+        // --- STEP 1: Fuzzifikasi ---
         foreach ($kriteriaList as $kriteria) {
+            $field = $kriteria->mapping_field;
+            
+            // Ambil input dari tabel cpcl atau cpcl_penilaian
+            $rawInput = ($kriteria->jenis_kriteria === 'kontinu') 
+                        ? (string) ($cpcl->{$field} ?? '') 
+                        : trim(DB::table('cpcl_penilaian')->where('cpcl_id', $cpcl_id)->where('kriteria_id', $kriteria->id)->value('nilai') ?? '');
 
-            if ($kriteria->jenis_kriteria === 'kontinu') {
-                $field    = $kriteria->mapping_field;
-                $rawInput = '';
-
-                if ($field && array_key_exists($field, $cpcl->getAttributes())) {
-                    $rawInput = (string) $cpcl->$field;
-                    Log::debug("Kriteria [{$kriteria->kode_kriteria}] {$kriteria->nama_kriteria} | Field: {$field} | Nilai dari cpcl: '{$rawInput}'");
-                } else {
-                    Log::warning("mapping_field '{$field}' tidak ditemukan di tabel cpcl untuk kriteria [{$kriteria->kode_kriteria}]");
-                }
-
-            } else {
-                $penilaian = DB::table('cpcl_penilaian')
-                    ->where('cpcl_id', $cpcl_id)
-                    ->where('kriteria_id', $kriteria->id)
-                    ->first();
-
-                $rawInput = trim($penilaian?->nilai ?? '');
-                Log::debug("Kriteria [{$kriteria->kode_kriteria}] {$kriteria->nama_kriteria} | Input dari penilaian: '{$rawInput}'");
-            }
-
-            $x = is_numeric($rawInput) ? (float) $rawInput : null;
-
+            // Fallback: Jika input kosong, berikan '0' agar perhitungan tidak error
+            $inputVal = empty($rawInput) ? '0' : $rawInput;
             $himpunan = [];
+
             foreach ($kriteria->subKriteria as $sub) {
-                $mu = self::hitungMu($sub, $rawInput);
+                $mu = self::hitungMu($sub, $inputVal);
                 $k  = (float) ($sub->nilai_konsekuen ?? 0);
-
-                // ── MENGHITUNG KONSEKUEN KONTINU JIKA NOL ────────────────────
-                if ($k == 0.0 && $kriteria->jenis_kriteria === 'kontinu') {
-                    $k = self::hitungKonsekuenKontinu($sub, $x);
+                
+                // Fallback Konsekuen: Jika di DB 0, berikan nilai standar berdasarkan namanya
+                if ($k == 0) {
+                    $k = self::getFallbackK($sub->nama_sub_kriteria);
                 }
-
-                Log::debug("  -> Sub: {$sub->nama_sub_kriteria} | Kurva: {$sub->tipe_kurva} | mu: {$mu} | k: {$k}");
 
                 $himpunan[] = [
-                    'sub_id' => $sub->id,
-                    'nama'   => $sub->nama_sub_kriteria,
-                    'tipe'   => $sub->tipe_kurva,
-                    'a'      => (float) $sub->batas_bawah,
-                    'b'      => (float) $sub->batas_tengah_1,
-                    'c'      => (float) $sub->batas_tengah_2,
-                    'd'      => (float) $sub->batas_atas,
-                    'k'      => $k,
-                    'mu'     => round($mu, 6),
+                    'nama' => $sub->nama_sub_kriteria, 
+                    'mu' => $mu, 
+                    'k' => $k
                 ];
             }
-
             $fuzzifikasi[] = [
-                'kriteria_id'   => $kriteria->id,
-                'kode'          => $kriteria->kode_kriteria,
-                'nama'          => $kriteria->nama_kriteria,
-                'jenis'         => $kriteria->jenis_kriteria,
-                'mapping_field' => $kriteria->mapping_field ?? null,
-                'input'         => $rawInput,
-                'x'             => $x,
-                'himpunan'      => $himpunan,
-                'sub'           => $himpunan,
+                'kode'     => $kriteria->kode_kriteria, 
+                'nama'     => $kriteria->nama_kriteria,
+                'input'    => $inputVal,
+                'himpunan' => $himpunan,
+                'sub'      => $himpunan // Alias untuk kompatibilitas dengan view
             ];
         }
 
-        // ── STEP 2 & 3: Bentuk Rule + Hitung Firing Strength (α) ───────────
-        Log::debug("--- STEP 2 & 3: Rule Base & Firing Strength ---");
-
-        $himpunanAktifPerKriteria = [];
-
+        // --- STEP 2: Evaluasi Rule Base ---
+        $himpunanAktif = [];
         foreach ($fuzzifikasi as $kFuzz) {
             $aktif = array_filter($kFuzz['himpunan'], fn($h) => $h['mu'] > 0);
-
-            if (empty($aktif)) {
-                Log::warning("PERINGATAN: Tidak ada himpunan aktif untuk kriteria {$kFuzz['kode']} dengan input '{$kFuzz['input']}'");
-                continue;
+            if (!empty($aktif)) {
+                $himpunanAktif[$kFuzz['kode']] = array_values($aktif);
             }
-
-            Log::debug("Himpunan aktif untuk {$kFuzz['kode']}: " .
-                implode(', ', array_column(array_values($aktif), 'nama')));
-
-            $himpunanAktifPerKriteria[$kFuzz['kode']] = array_values($aktif);
         }
 
         $rules = [];
-
-        if (!empty($himpunanAktifPerKriteria)) {
-            $kombinasi = self::kartesian($himpunanAktifPerKriteria);
-            Log::debug("Total kombinasi rules terbentuk: " . count($kombinasi));
-
+        if (!empty($himpunanAktif)) {
+            $kombinasi = self::kartesian($himpunanAktif);
             foreach ($kombinasi as $idx => $combo) {
                 $muValues = array_column($combo, 'mu');
                 $kValues  = array_column($combo, 'k');
 
-                $alpha = min($muValues);                          
-                $zRule = array_sum($kValues) / count($kValues);  
-
+                $alpha = min($muValues);
+                $zRule = array_sum($kValues) / count($kValues);
+                
+                // Menyusun anteceden untuk keperluan log/view
                 $anteceden = [];
                 foreach ($combo as $kode => $h) {
-                    $anteceden[] = [
-                        'kriteria' => $kode,
-                        'himpunan' => $h['nama'],
-                        'mu'       => $h['mu'],
-                        'k'        => $h['k'],
-                    ];
+                    $anteceden[] = ['kriteria' => $kode, 'himpunan' => $h['nama']];
                 }
 
-                $ruleId = 'R' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT);
-                Log::debug("{$ruleId} | alpha: {$alpha} | z_rule: {$zRule} | alpha_x_z: " . round($alpha * $zRule, 6));
-
                 $rules[] = [
-                    'rule_id'   => $ruleId,
+                    'rule_id'   => 'R' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT),
                     'anteceden' => $anteceden,
-                    'alpha'     => round($alpha, 6),
-                    'z_rule'    => round($zRule, 6),
-                    'alpha_x_z' => round($alpha * $zRule, 6),
+                    'alpha'     => $alpha, 
+                    'z_rule'    => $zRule,
+                    'alpha_x_z' => $alpha * $zRule
                 ];
             }
-        } else {
-            Log::warning("Tidak ada kriteria dengan himpunan aktif. Semua skor = 0.");
         }
 
-        // ── STEP 4: Defuzzifikasi — Weighted Average ─────────────────────────
-        Log::debug("--- STEP 4: Defuzzifikasi ---");
-
+        // --- STEP 3: Defuzzifikasi ---
         $sumAlphaZ = array_sum(array_column($rules, 'alpha_x_z'));
         $sumAlpha  = array_sum(array_column($rules, 'alpha'));
+        
         $z         = $sumAlpha > 0 ? ($sumAlphaZ / $sumAlpha) : 0.0;
-        $skorAkhir = round($z * 100, 2);
+        $skala     = self::getSkalaPrioritas($z);
 
-        Log::debug("Hasil Defuzzifikasi: " . json_encode([
-            'Sum(alpha * z)' => round($sumAlphaZ, 6),
-            'Sum(alpha)'     => round($sumAlpha, 6),
-            'z (crisp)'      => round($z, 6),
-            'Skor Akhir'     => $skorAkhir,
-        ]));
-
-        $alphaGlobal = !empty($rules) ? max(array_column($rules, 'alpha')) : 0.0;
-        $skala       = self::getSkalaPrioritas($z);
-
-        Log::debug("Skala Prioritas: {$skala['prioritas']} - {$skala['status']}");
-
+        // --- PENGEMBALIAN DATA ---
+        // PENTING: Jangan hapus 'cpcl', 'fuzzifikasi', dan 'rules'. View membutuhkannya.
         return [
+            // Data untuk View (detail.blade.php)
             'cpcl'             => $cpcl,
             'fuzzifikasi'      => $fuzzifikasi,
             'rules'            => $rules,
             'sum_alpha_z'      => round($sumAlphaZ, 6),
             'sum_alpha'        => round($sumAlpha, 6),
-            'alpha'            => round($alphaGlobal, 6),
+            
+            // Data untuk Database
+            'alpha'            => !empty($rules) ? max(array_column($rules, 'alpha')) : 0.0,
             'z'                => round($z, 6),
-            'skor_akhir'       => $skorAkhir,
+            'skor_akhir'       => round($z * 100, 2),
             'status_kelayakan' => $skala['status'],
             'skala_prioritas'  => $skala['prioritas'],
             'interpretasi'     => $skala['interpretasi'],
@@ -210,71 +192,49 @@ class FuzzySugenoService
     }
 
     // =========================================================================
-    // FUZZIFIKASI: Hitung μ satu sub_kriteria terhadap nilai input
+    // 4. HELPERS
     // =========================================================================
-
-    private static function hitungMu(object $sub, string $rawInput): float
+    
+    /**
+     * Memberikan nilai konsekuen default jika di database bernilai 0
+     */
+    private static function getFallbackK(string $namaSub): float
     {
-        $rawInput = trim($rawInput);
+        $n = strtolower($namaSub);
+        return match (true) {
+            str_contains($n, 'sangat') || str_contains($n, 'luas') || str_contains($n, 'tinggi') => 1.0,
+            str_contains($n, 'sedang') || str_contains($n, 'lengkap') || str_contains($n, 'cukup') => 0.7,
+            str_contains($n, 'rendah') || str_contains($n, 'kurang') || str_contains($n, 'baru') || str_contains($n, 'sempit') => 0.4,
+            default => 0.5,
+        };
+    }
 
-        if (!is_numeric($rawInput)) {
-            return strtolower($rawInput) === strtolower(trim($sub->nama_sub_kriteria))
-                ? 1.0
-                : 0.0;
+    /**
+     * Menghitung nilai keanggotaan (mu)
+     */
+    private static function hitungMu(object $sub, string $input): float
+    {
+        if (!is_numeric($input)) {
+            return strtolower($input) === strtolower(trim($sub->nama_sub_kriteria)) ? 1.0 : 0.0;
         }
 
-        $x = (float) $rawInput;
+        $x = (float) $input;
         $a = (float) $sub->batas_bawah;
         $b = (float) $sub->batas_tengah_1;
         $c = (float) $sub->batas_tengah_2;
         $d = (float) $sub->batas_atas;
 
         return match ($sub->tipe_kurva) {
-            'bahu_kiri' => match (true) {
-                $x <= $c       => 1.0,
-                $x >= $d       => 0.0,
-                ($d - $c) == 0 => 0.0,
-                default        => ($d - $x) / ($d - $c),
-            },
-            'trapesium' => match (true) {
-                $x <= $a             => 0.0,
-                $x >= $d             => 0.0,
-                $x >= $b && $x <= $c => 1.0,
-                $x < $b              => ($b - $a) == 0 ? 0.0 : ($x - $a) / ($b - $a),
-                default              => ($d - $c) == 0 ? 0.0 : ($d - $x) / ($d - $c),
-            },
-            'bahu_kanan' => match (true) {
-                $x <= $a       => 0.0,
-                $x >= $b       => 1.0,
-                ($b - $a) == 0 => 0.0,
-                default        => ($x - $a) / ($b - $a),
-            },
-            default => 0.0,
+            'bahu_kiri'  => ($x <= $c) ? 1.0 : (($x >= $d) ? 0.0 : ($d - $x) / ($d - $c)),
+            'trapesium'  => ($x <= $a || $x >= $d) ? 0.0 : (($x >= $b && $x <= $c) ? 1.0 : ($x < $b ? ($x - $a) / ($b - $a) : ($d - $x) / ($d - $c))),
+            'bahu_kanan' => ($x <= $a) ? 0.0 : (($x >= $b) ? 1.0 : ($x - $a) / ($b - $a)),
+            default      => 0.0,
         };
     }
 
-    // =========================================================================
-    // HELPER: Kalkulasi Konsekuen Kontinu
-    // =========================================================================
-
-    private static function hitungKonsekuenKontinu(object $sub, ?float $x): float
-    {
-        // Berhubung perhitungan Anda menggunakan basis persentase z* (0 hingga 1),
-        // fungsi ini memetakan tipe kurva himpunan ke nilai baku konsekuen Sugeno.
-        // Anda bebas mengatur bobot benefit/cost di sini.
-
-        return match ($sub->tipe_kurva) {
-            'bahu_kiri'  => 0.25, // Nilai default representasi 'Kurang / Rendah'
-            'trapesium'  => 0.60, // Nilai default representasi 'Cukup / Sedang'
-            'bahu_kanan' => 0.95, // Nilai default representasi 'Sangat Baik / Tinggi'
-            default      => 0.50,
-        };
-    }
-
-    // =========================================================================
-    // HELPER: Kombinasi Kartesian
-    // =========================================================================
-
+    /**
+     * Menghasilkan kombinasi rule (Cross Join / Cartesian Product)
+     */
     private static function kartesian(array $arrays): array
     {
         $result = [[]];
@@ -290,16 +250,15 @@ class FuzzySugenoService
         return $result;
     }
 
-    // =========================================================================
-    // HELPER: Skala Prioritas
-    // =========================================================================
-
+    /**
+     * Menentukan skala prioritas dari nilai Z (0-1)
+     */
     private static function getSkalaPrioritas(float $z): array
     {
         return match (true) {
             $z > 0.80 => ['prioritas' => 'Prioritas I',   'interpretasi' => 'Sangat Diprioritaskan', 'status' => 'Layak'],
             $z > 0.60 => ['prioritas' => 'Prioritas II',  'interpretasi' => 'Diprioritaskan',        'status' => 'Layak'],
-            $z > 0.40 => ['prioritas' => 'Prioritas III', 'interpretasi' => 'Dipertimbangkan',       'status' => 'Tidak Layak'],
+            $z > 0.40 => ['prioritas' => 'Prioritas III', 'interpretasi' => 'Dipertimbangkan',      'status' => 'Tidak Layak'],
             default   => ['prioritas' => 'Prioritas IV',  'interpretasi' => 'Tidak Diprioritaskan',  'status' => 'Tidak Layak'],
         };
     }

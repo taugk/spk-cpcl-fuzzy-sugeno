@@ -9,7 +9,6 @@ use App\Services\CpclService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 
 class CpclController extends Controller
 {
@@ -27,23 +26,21 @@ class CpclController extends Controller
 
     public function index(Request $request)
     {
-        $role = $this->getRolePrefix();
+        $role  = $this->getRolePrefix();
         $query = Cpcl::query();
 
         if ($request->filled('kecamatan')) {
             $query->where('lokasi', 'LIKE', '%' . $request->kecamatan . '%');
         }
-
         if ($request->filled('rencana_usaha')) {
             $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
         }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('nama_kelompok', 'LIKE', "%$search%")
-                  ->orWhere('nama_ketua', 'LIKE', "%$search%")
-                  ->orWhere('nik_ketua', 'LIKE', "%$search%");
+                  ->orWhere('nama_ketua',  'LIKE', "%$search%")
+                  ->orWhere('nik_ketua',   'LIKE', "%$search%");
             });
         }
 
@@ -53,51 +50,30 @@ class CpclController extends Controller
 
     public function verified(Request $request)
     {
-        $role = $this->getRolePrefix();
+        $role  = $this->getRolePrefix();
         $query = Cpcl::where('status', 'terverifikasi');
 
-        if ($request->filled('kecamatan')) {
-            $query->where('lokasi', 'LIKE', '%' . $request->kecamatan . '%');
-        }
-
-        if ($request->filled('rencana_usaha')) {
-            $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
-        }
-
+        if ($request->filled('kecamatan'))    $query->where('lokasi',        'LIKE', '%' . $request->kecamatan . '%');
+        if ($request->filled('rencana_usaha')) $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nama_kelompok', 'LIKE', "%$search%")
-                  ->orWhere('nama_ketua', 'LIKE', "%$search%")
-                  ->orWhere('nik_ketua', 'LIKE', "%$search%");
-            });
+            $s = $request->search;
+            $query->where(fn($q) => $q->where('nama_kelompok','LIKE',"%$s%")->orWhere('nama_ketua','LIKE',"%$s%")->orWhere('nik_ketua','LIKE',"%$s%"));
         }
 
         $data = $query->latest()->paginate(10)->withQueryString();
         return view("$role.data-cpcl.terverifikasi", compact('data'));
     }
 
-
     public function belum(Request $request)
     {
-        $role = $this->getRolePrefix();
+        $role  = $this->getRolePrefix();
         $query = Cpcl::where('status', '!=', 'terverifikasi');
 
-        if ($request->filled('kecamatan')) {
-            $query->where('lokasi', 'LIKE', '%' . $request->kecamatan . '%');
-        }
-
-        if ($request->filled('rencana_usaha')) {
-            $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
-        }
-
+        if ($request->filled('kecamatan'))    $query->where('lokasi',        'LIKE', '%' . $request->kecamatan . '%');
+        if ($request->filled('rencana_usaha')) $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nama_kelompok', 'LIKE', "%$search%")
-                  ->orWhere('nama_ketua', 'LIKE', "%$search%")
-                  ->orWhere('nik_ketua', 'LIKE', "%$search%");
-            });
+            $s = $request->search;
+            $query->where(fn($q) => $q->where('nama_kelompok','LIKE',"%$s%")->orWhere('nama_ketua','LIKE',"%$s%")->orWhere('nik_ketua','LIKE',"%$s%"));
         }
 
         $data = $query->latest()->paginate(10)->withQueryString();
@@ -110,15 +86,10 @@ class CpclController extends Controller
         return view("$role.data-cpcl.form");
     }
 
-    /**
-     * Method untuk menampilkan form Edit
-     */
     public function edit($id)
     {
         $role = $this->getRolePrefix();
         $cpcl = Cpcl::findOrFail($id);
-        
-        // Menggunakan view form yang sama dengan Create
         return view("$role.data-cpcl.form", compact('cpcl'));
     }
 
@@ -139,7 +110,7 @@ class CpclController extends Controller
     public function store(Request $request)
     {
         $role = $this->getRolePrefix();
-        $this->validateCpcl($request, false); // false = create (file wajib)
+        $this->validateCpcl($request, false);
 
         try {
             $this->cpclService->storeCpcl($request->all());
@@ -150,13 +121,10 @@ class CpclController extends Controller
         }
     }
 
-    /**
-     * Method untuk memproses Update data
-     */
     public function update(Request $request, $id)
     {
         $role = $this->getRolePrefix();
-        $this->validateCpcl($request, true); // true = update (file opsional)
+        $this->validateCpcl($request, true);
 
         try {
             $this->cpclService->updateCpcl($id, $request->all());
@@ -167,9 +135,6 @@ class CpclController extends Controller
         }
     }
 
-    /**
-     * Helper Validasi agar tidak duplikasi kode
-     */
     private function validateCpcl(Request $request, $isUpdate = false)
     {
         $rules = [
@@ -194,69 +159,67 @@ class CpclController extends Controller
 
     public function showVerification($id)
     {
-        $role = $this->getRolePrefix();
-        $cpcl = Cpcl::findOrFail($id);
+        $role     = $this->getRolePrefix();
+        $cpcl     = Cpcl::findOrFail($id);
         $kriteria = Kriteria::with('subKriteria')->get();
         return view("$role.data-cpcl.verifikasi", compact('cpcl', 'kriteria'));
     }
 
     public function verify(Request $request, $id)
-{
-    $role = $this->getRolePrefix();
+    {
+        $role = $this->getRolePrefix();
 
-    Log::info('Incoming CPCL Verification Request', [
-        'cpcl_id' => $id,
-        'data' => $request->all(),
-        'timestamp' => now(),
-    ]);
-
-    $request->validate([
-        'nilai' => 'required|array',
-        'status' => 'required|in:terverifikasi,ditolak,baru',
-        'catatan_verifikator' => 'nullable|string|max:500',
-    ]);
-
-    try {
-        // 1. Proses simpan penilaian dan eksekusi FuzzySugenoService
-        $this->cpclService->verifyCpcl($id, $request->all());
-
-        Log::info('CPCL VERIFIED SUCCESS', [
-            'cpcl_id' => $id,
-            'status' => $request->status,
-            'timestamp' => now(),
+        Log::info('Incoming CPCL Verification Request', [
+            'cpcl_id'   => $id,
+            'data'      => $request->except('_token'),
+            'timestamp' => now()->toDateTimeString(),
         ]);
 
-        // 2. JIKA STATUS TERVERIFIKASI, ARAHKAN KE HALAMAN AUDIT
-        // Pastikan nama route sesuai dengan yang ada di web.php (admin.perhitungan.index)
-        if ($request->status == 'terverifikasi') {
+        $request->validate([
+            'nilai'               => 'required|array',
+            'status'              => 'required|in:terverifikasi,ditolak,baru,perlu_perbaikan',
+            'catatan_verifikator' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            $this->cpclService->verifyCpcl($id, $request->all());
+
+            Log::info('CPCL VERIFIED SUCCESS', [
+                'cpcl_id'   => $id,
+                'status'    => $request->status,
+                'timestamp' => now()->toDateTimeString(),
+            ]);
+
+            // Setelah verifikasi → kembali ke daftar, bukan langsung ke perhitungan.
+            // Perhitungan fuzzy dilakukan secara massal dari halaman Ranking.
+            $pesan = match($request->status) {
+                'terverifikasi'   => 'CPCL berhasil diverifikasi dan masuk antrian perhitungan.',
+                'perlu_perbaikan' => 'CPCL dikembalikan untuk perbaikan.',
+                'ditolak'         => 'CPCL telah ditolak.',
+                default           => 'Status CPCL berhasil diperbarui.',
+            };
+
             return redirect()
-                ->route('admin.perhitungan.index', ['id' => $id]) 
-                ->with('success', 'Verifikasi berhasil! Memulai simulasi audit perhitungan...');
+                ->route("$role.cpcl.index")
+                ->with('success', $pesan);
+
+        } catch (\Throwable $e) {
+            Log::error('CPCL VERIFICATION FAILED', [
+                'cpcl_id'       => $id,
+                'error_message' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal memverifikasi data: ' . $e->getMessage());
         }
-
-        // 3. Jika ditolak atau status lain, kembali ke daftar utama CPCL
-        return redirect()
-            ->route("$role.cpcl.index")
-            ->with('success', 'Status CPCL berhasil diperbarui.');
-
-    } catch (\Throwable $e) {
-        Log::error('CPCL VERIFICATION FAILED', [
-            'cpcl_id' => $id,
-            'error_message' => $e->getMessage(),
-        ]);
-
-        return back()
-            ->withInput()
-            ->with('error', 'Gagal memverifikasi data: ' . $e->getMessage());
     }
-}
 
     public function destroy($id)
     {
         $role = $this->getRolePrefix();
         try {
-            $cpcl = Cpcl::findOrFail($id);
-            $cpcl->delete();
+            $this->cpclService->deleteCpcl($id);
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil dihapus');
         } catch (\Throwable $e) {
             Log::error('CPCL DELETE FAILED: ' . $e->getMessage());
