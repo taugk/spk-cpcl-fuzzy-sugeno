@@ -95,7 +95,7 @@
     <li class="menu-item {{ request()->routeIs('admin.perhitungan*') ? 'active' : '' }}">
       <a href="{{ route('admin.perhitungan.index') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-calculator"></i>
-        <div>Simulasi Hitung</div>
+        <div>Perhitungan & Ranking</div>
       </a>
     </li>
 
