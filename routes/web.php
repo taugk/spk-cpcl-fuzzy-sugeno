@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use App\Http\Controllers\AuthController; 
 use App\Http\Controllers\Admin\CpclController;
-use App\Http\Controllers\Admin\FuzzyController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\FuzzyController;
 use App\Http\Controllers\Admin\KriteriaController;
+use App\Http\Controllers\Admin\LaporanController;
+use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\AuthController; 
 use App\Http\Controllers\Uptd\DashboardController as UptdDashboardController;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 
 // 1. Route Root (Cek Login & Role)
 Route::get('/', function(){
@@ -72,6 +73,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->grou
     Route::get('/detail/{id}', [CpclController::class, 'detail'])->name('cpcl.show');
     Route::get('/verifikasi/{id}', [CpclController::class, 'showVerification'])->name('cpcl.verify');
     Route::post('/verifikasi/{id}', [CpclController::class, 'verify'])->name('cpcl.verify.process');
+
+    //Laporan
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
 
 
 });

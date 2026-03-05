@@ -1,6 +1,5 @@
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
 
-  <!-- LOGO -->
   <div class="app-brand demo" style="height: 80px;">
     <a href="{{ Route::has('admin.dashboard') ? route('admin.dashboard') : '#' }}" class="app-brand-link gap-2">
       
@@ -28,7 +27,6 @@
 
   <ul class="menu-inner py-1">
 
-    <!-- DASHBOARD -->
     <li class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
       <a href="{{ route('admin.dashboard') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-home-circle"></i>
@@ -36,12 +34,10 @@
       </a>
     </li>
 
-    <!-- MASTER DATA -->
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Master Data</span>
     </li>
 
-    <!-- DATA CPCL (WITH SUBMENU) -->
     <li class="menu-item {{ request()->routeIs('admin.cpcl.*') ? 'open active' : '' }}">
       <a href="javascript:void(0);" class="menu-link menu-toggle">
         <i class="menu-icon tf-icons bx bx-data"></i>
@@ -49,29 +45,24 @@
       </a>
 
       <ul class="menu-sub">
-
         <li class="menu-item {{ request()->routeIs('admin.cpcl.index') ? 'active' : '' }}">
           <a href="{{ route('admin.cpcl.index') }}" class="menu-link">
             <div>Semua Data</div>
           </a>
         </li>
-
         <li class="menu-item {{ request()->routeIs('admin.cpcl.belum-verifikasi') ? 'active' : '' }}">
           <a href="{{ route('admin.cpcl.belum-verifikasi') }}" class="menu-link">
             <div>Belum Terverifikasi</div>
           </a>
         </li>
-
         <li class="menu-item {{ request()->routeIs('admin.cpcl.verifikasi') ? 'active' : '' }}">
           <a href="{{ route('admin.cpcl.verifikasi') }}" class="menu-link">
             <div>Terverifikasi</div>
           </a>
         </li>
-
       </ul>
     </li>
 
-    <!-- DATA PENGGUNA -->
     <li class="menu-item {{ request()->routeIs('admin.user-management*') ? 'active' : '' }}">
       <a href="{{ route('admin.user-management.index') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-group"></i>
@@ -79,7 +70,6 @@
       </a>
     </li>
 
-    <!-- LOGIKA FUZZY -->
     <li class="menu-header small text-uppercase">
       <span class="menu-header-text">Logika Fuzzy</span>
     </li>
@@ -98,16 +88,8 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->routeIs('admin.aturan*') ? 'active' : '' }}">
-      <a href="{{ route('admin.aturan.index') }}" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-git-merge"></i>
-        <div>Data Aturan (Rules)</div>
-      </a>
-    </li>
-
-    <!-- KEPUTUSAN -->
     <li class="menu-header small text-uppercase">
-      <span class="menu-header-text">Keputusan</span>
+      <span class="menu-header-text">Keputusan & Laporan</span>
     </li>
 
     <li class="menu-item {{ request()->routeIs('admin.perhitungan*') ? 'active' : '' }}">
@@ -117,21 +99,13 @@
       </a>
     </li>
 
-    <li class="menu-item {{ request()->routeIs('admin.hasil*') ? 'active' : '' }}">
-      <a href="{{ route('admin.hasil.index') }}" class="menu-link">
-        <i class="menu-icon tf-icons bx bx-trophy"></i>
-        <div>Ranking / Hasil</div>
-      </a>
-    </li>
-
-    {{-- <li class="menu-item {{ request()->routeIs('admin.laporan*') ? 'active' : '' }}">
+    <li class="menu-item {{ request()->routeIs('admin.laporan*') ? 'active' : '' }}">
       <a href="{{ route('admin.laporan.index') }}" class="menu-link">
         <i class="menu-icon tf-icons bx bxs-file-pdf"></i>
         <div>Laporan Akhir</div>
       </a>
-    </li> --}}
+    </li>
 
-    <!-- LOGOUT -->
     <li class="menu-item mt-3">
       <form method="POST" action="{{ route('logout') }}" id="logout-form">
         @csrf
