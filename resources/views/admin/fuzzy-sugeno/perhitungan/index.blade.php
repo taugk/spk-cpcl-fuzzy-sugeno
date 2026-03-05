@@ -12,7 +12,7 @@
                 <h4 class="fw-bold mb-1">
                     <i class="bx bx-trophy text-warning me-2"></i>Perhitungan & Ranking Kelayakan CPCL
                 </h4>
-                <p class="text-muted mb-0">Hasil Fuzzy Sugeno Orde Nol — diurutkan berdasarkan skor tertinggi</p>
+                <p class="text-muted mb-0">Hasil Fuzzy Sugeno Orde Nol — diurutkan berdasarkan skor tertinggi (pendekatan bahu)</p>
             </div>
             <button onclick="window.print()" class="btn btn-outline-secondary no-print">
                 <i class="bx bx-printer me-1"></i> Cetak
@@ -39,6 +39,14 @@
             </div>
         @endif
 
+        {{-- INFO BOX v2.0 --}}
+        <div class="alert alert-info alert-dismissible fade show mb-4 no-print">
+            <i class="bx bx-info-circle me-2"></i>
+            <strong>FuzzySugenoService v2.0</strong> — Implementasi Fuzzy Sugeno Orde Nol dengan direct evaluation.
+            Semakin tinggi skor (z*) semakin layak. <a href="#" onclick="alert('Lihat dokumentasi untuk detail lebih lanjut.')">Learn more</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
         {{-- PANEL KONTROL --}}
         <div class="card border-0 shadow-sm mb-4 no-print">
             <div class="card-body">
@@ -61,13 +69,13 @@
                     {{-- Tombol hitung semua --}}
                     <div class="col-12 col-md-6">
                         <form method="POST" action="{{ route('admin.perhitungan.proses') }}"
-                              onsubmit="return confirm('Proses hitung {{ $totalTerverifikasi }} CPCL terverifikasi periode {{ $periode }}?\n\nData ranking yang ada akan diperbarui.')">
+                              onsubmit="return confirm('Proses hitung {{ $totalTerverifikasi }} CPCL terverifikasi periode {{ $periode }}?\n\nData ranking yang ada akan diperbarui. Proses ini menggunakan algoritma Fuzzy Sugeno v2.0 yang dioptimasi.')">
                             @csrf
                             <label class="form-label fw-semibold small">Proses Hitung Semua CPCL Terverifikasi</label>
                             <div class="input-group">
                                 <input type="number" name="periode" class="form-control"
                                        value="{{ $periode }}" min="2020" max="2099">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" {{ $totalTerverifikasi == 0 ? 'disabled' : '' }}>
                                     <i class="bx bx-calculator me-1"></i> Hitung & Ranking
                                 </button>
                             </div>
@@ -77,7 +85,7 @@
                                 @if($totalBelumDihitung > 0)
                                     <span class="text-warning fw-bold">{{ $totalBelumDihitung }} belum dihitung.</span>
                                 @else
-                                    <span class="text-success">Semua sudah dihitung.</span>
+                                    <span class="text-success">✅ Semua sudah dihitung dan di-ranking.</span>
                                 @endif
                             </small>
                         </form>
@@ -126,7 +134,7 @@
                     <h6 class="text-muted">Belum ada data ranking untuk periode {{ $periode }}</h6>
                     <p class="text-muted small mb-0">
                         Klik tombol <strong>"Hitung &amp; Ranking"</strong> untuk memproses
-                        {{ $totalTerverifikasi }} CPCL terverifikasi.
+                        {{ $totalTerverifikasi }} CPCL terverifikasi menggunakan Fuzzy Sugeno v2.0.
                     </p>
                 </div>
             @else
@@ -147,12 +155,14 @@
                         <tbody>
                             @foreach($hasilRanking as $h)
                             @php
-                                $rank       = $h->ranking;
-                                $rowClass   = $rank === 1 ? 'table-warning' : '';
+                                // ✅ FIX v2.0: Gunakan ranking dari hasil_fuzzy
+                                $rank       = $h->ranking ?? '-';
+                                $rowClass   = $rank == 1 ? 'table-warning' : '';
                                 $badgeClass = match($h->skala_prioritas ?? '') {
                                     'Prioritas I'   => 'bg-success',
                                     'Prioritas II'  => 'bg-primary',
                                     'Prioritas III' => 'bg-warning text-dark',
+                                    'Prioritas IV'  => 'bg-secondary',
                                     default         => 'bg-secondary',
                                 };
                             @endphp
@@ -180,18 +190,18 @@
                                     <span class="badge bg-label-info">{{ $h->cpcl->bidang ?? '-' }}</span>
                                 </td>
 
-                                {{-- z* --}}
+                                {{-- z* (nilai_z) --}}
                                 <td class="text-center fw-bold text-primary">
                                     {{ number_format($h->nilai_z, 4) }}
                                 </td>
 
-                                {{-- Skor % --}}
+                                {{-- Skor % (skor_akhir) --}}
                                 <td class="text-center">
-                                    <div class="fw-bold mb-1">{{ $h->skor_akhir }}%</div>
+                                    <div class="fw-bold mb-1">{{ number_format($h->skor_akhir, 2) }}%</div>
                                     <div class="progress" style="height:6px;">
                                         <div class="progress-bar
                                             {{ $h->skor_akhir >= 80 ? 'bg-success' : ($h->skor_akhir >= 60 ? 'bg-primary' : ($h->skor_akhir >= 40 ? 'bg-warning' : 'bg-danger')) }}"
-                                             style="width:{{ $h->skor_akhir }}%">
+                                             style="width:{{ min($h->skor_akhir, 100) }}%">
                                         </div>
                                     </div>
                                 </td>
@@ -217,7 +227,7 @@
                                 <td class="text-center no-print">
                                     <a href="{{ route('admin.perhitungan.detail', $h->cpcl_id) }}"
                                        class="btn btn-sm btn-outline-primary"
-                                       title="Lihat langkah perhitungan fuzzy">
+                                       title="Lihat langkah-langkah perhitungan Fuzzy Sugeno v2.0">
                                         <i class="bx bx-file-find"></i>
                                     </a>
                                 </td>
@@ -247,37 +257,44 @@
             @endif
         </div>
 
-        {{-- Referensi skala --}}
+        {{-- REFERENSI SKALA PRIORITAS --}}
         <div class="card mt-4 border-0 shadow-sm no-print">
             <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bx bx-info-circle me-1"></i> Referensi Skala Prioritas (z*)</h6>
+                <h6 class="fw-bold mb-3">
+                    <i class="bx bx-info-circle me-1"></i> 
+                    Referensi Skala Prioritas (z*) — Pendekatan Bahu (Semakin Tinggi Semakin Layak)
+                </h6>
                 <div class="row text-center g-3">
                     <div class="col-6 col-md-3">
-                        <div class="p-2 border rounded border-success">
-                            <small class="text-muted d-block">z* > 0.80</small>
-                            <span class="fw-bold text-success">Prioritas I</span>
+                        <div class="p-3 border rounded border-success">
+                            <div class="fw-bold text-success mb-1">z* > 0.80</div>
+                            <span class="badge bg-success mb-2 d-inline-block">Prioritas I</span>
                             <small class="text-muted d-block">Sangat Diprioritaskan</small>
+                            <small class="text-success d-block mt-1">✅ Layak</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 border rounded border-primary">
-                            <small class="text-muted d-block">0.60 < z* ≤ 0.80</small>
-                            <span class="fw-bold text-primary">Prioritas II</span>
+                        <div class="p-3 border rounded border-primary">
+                            <div class="fw-bold text-primary mb-1">0.60 < z* ≤ 0.80</div>
+                            <span class="badge bg-primary mb-2 d-inline-block">Prioritas II</span>
                             <small class="text-muted d-block">Diprioritaskan</small>
+                            <small class="text-success d-block mt-1">✅ Layak</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 border rounded border-warning">
-                            <small class="text-muted d-block">0.40 < z* ≤ 0.60</small>
-                            <span class="fw-bold text-warning">Prioritas III</span>
+                        <div class="p-3 border rounded border-warning">
+                            <div class="fw-bold text-warning mb-1">0.40 < z* ≤ 0.60</div>
+                            <span class="badge bg-warning text-dark mb-2 d-inline-block">Prioritas III</span>
                             <small class="text-muted d-block">Dipertimbangkan</small>
+                            <small class="text-danger d-block mt-1">❌ Tidak Layak</small>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 border rounded border-danger">
-                            <small class="text-muted d-block">z* ≤ 0.40</small>
-                            <span class="fw-bold text-danger">Prioritas IV</span>
+                        <div class="p-3 border rounded border-danger">
+                            <div class="fw-bold text-danger mb-1">z* ≤ 0.40</div>
+                            <span class="badge bg-secondary mb-2 d-inline-block">Prioritas IV</span>
                             <small class="text-muted d-block">Tidak Diprioritaskan</small>
+                            <small class="text-danger d-block mt-1">❌ Tidak Layak</small>
                         </div>
                     </div>
                 </div>
