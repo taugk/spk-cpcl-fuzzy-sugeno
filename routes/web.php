@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\CpclController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FuzzyController;
 use App\Http\Controllers\Admin\KriteriaController;
+use App\Http\Controllers\Uptd\LaporanController as UptdLaporanController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AuthController; 
@@ -99,8 +100,22 @@ Route::prefix('uptd')->name('uptd.')->middleware(['auth', 'role:uptd'])->group(f
     Route::delete('/cpcl/{id}', [CpclController::class, 'destroy'])
     ->name('cpcl.destroy');
 
-    // Menu 2: Laporan Akhir
-    Route::get('/laporan', [CpclController::class, 'laporan'])->name('laporan.index');
+    Route::get('laporan-sk', [UptdLaporanController::class, 'index'])->name('laporan.index');
     
-    // Catatan: Route perhitungan dihapus sesuai permintaan menu sidebar yang baru
+    // Detail SK
+    Route::get('laporan-sk/{cpcl}', [UptdLaporanController::class, 'show'])->name('laporan-sk.show');
+    
+    // Print SK Individual - UNTUK DICETAK DAN DIKIRIM KE KELOMPOK TANI
+    Route::get('laporan-sk/{cpcl}/print', [UptdLaporanController::class, 'print'])->name('laporan-sk.print');
+    
+    // Print Bulk SK (multiple)
+    Route::post('laporan-sk/print-bulk', [UptdLaporanController::class, 'printBulk'])->name('laporan-sk.print-bulk');
+    
+    // Mark SK as Printed/Terbitkan
+    Route::post('laporan-sk/{cpcl}/mark-printed', [UptdLaporanController::class, 'markAsPrinted'])->name('laporan-sk.mark-printed');
+    
+    // Download PDF SK
+    Route::get('laporan-sk/{cpcl}/download-pdf', [UptdLaporanController::class, 'downloadPDF'])->name('laporan-sk.download-pdf');
+
+    
 });

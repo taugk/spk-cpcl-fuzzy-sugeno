@@ -139,25 +139,32 @@ class FuzzySugenoService
             $himpunan = [];
 
             // Hitung derajat keanggotaan untuk setiap himpunan fuzzy
-            foreach ($kriteria->subKriteria as $sub) {
-                $mu = self::hitungMu($sub, $inputVal);
-                
-                // Ambil nilai konsekuen (Sugeno Orde Nol: z = konstanta)
-                $k = (float) ($sub->nilai_konsekuen ?? 0);
-                
-                // Fallback: jika 0 di DB, gunakan nilai default berbasis nama
-                if ($k == 0) {
-                    $k = self::getFallbackK($sub->nama_sub_kriteria);
-                }
+           
+foreach ($kriteria->subKriteria as $sub) {
+    $mu = self::hitungMu($sub, $inputVal);
+    $k = (float) ($sub->nilai_konsekuen ?? 0);
+    
+    if ($k == 0) {
+        $k = self::getFallbackK($sub->nama_sub_kriteria);
+    }
 
-                if ($mu > 0) { // Hanya masukkan himpunan yang aktif (μ > 0)
-                    $himpunan[] = [
-                        'nama' => $sub->nama_sub_kriteria, 
-                        'mu'   => $mu, 
-                        'k'    => $k
-                    ];
-                }
-            }
+    // Hanya masukkan himpunan yang aktif (μ > 0)
+    // TAMBAHKAN 'params' agar frontend tahu bentuk kurvanya
+    if ($mu > 0) {
+        $himpunan[] = [
+            'nama' => $sub->nama_sub_kriteria, 
+            'mu'   => $mu, 
+            'k'    => $k,
+            'params' => [
+                'a'    => (float)$sub->batas_bawah,
+                'b'    => (float)$sub->batas_tengah_1,
+                'c'    => (float)$sub->batas_tengah_2,
+                'd'    => (float)$sub->batas_atas,
+                'tipe' => $sub->tipe_kurva // 'bahu_kiri', 'bahu_kanan', atau 'trapesium'
+            ]
+        ];
+    }
+}
 
             $fuzzifikasi[] = [
                 'kode'              => $kriteria->kode_kriteria, 
