@@ -19,30 +19,21 @@ class CpclController extends Controller
         $this->cpclService = $cpclService;
     }
 
-    private function getRolePrefix()
+    private function getRolePrefix(): string
     {
         return Auth::user()->role === 'admin' ? 'admin' : 'uptd';
     }
 
+    // =========================================================================
+    // INDEX & FILTER
+    // =========================================================================
+
     public function index(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::query();
+        $query = Cpcl::with('alamat');
 
-        if ($request->filled('kecamatan')) {
-            $query->where('lokasi', 'LIKE', '%' . $request->kecamatan . '%');
-        }
-        if ($request->filled('rencana_usaha')) {
-            $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
-        }
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('nama_kelompok', 'LIKE', "%$search%")
-                  ->orWhere('nama_ketua',  'LIKE', "%$search%")
-                  ->orWhere('nik_ketua',   'LIKE', "%$search%");
-            });
-        }
+        $this->applyFilters($query, $request);
 
         $data = $query->latest()->paginate(10)->withQueryString();
         return view("$role.data-cpcl.index", compact('data'));
@@ -51,14 +42,9 @@ class CpclController extends Controller
     public function verified(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::where('status', 'terverifikasi');
+        $query = Cpcl::with('alamat')->where('status', 'terverifikasi');
 
-        if ($request->filled('kecamatan'))    $query->where('lokasi',        'LIKE', '%' . $request->kecamatan . '%');
-        if ($request->filled('rencana_usaha')) $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(fn($q) => $q->where('nama_kelompok','LIKE',"%$s%")->orWhere('nama_ketua','LIKE',"%$s%")->orWhere('nik_ketua','LIKE',"%$s%"));
-        }
+        $this->applyFilters($query, $request);
 
         $data = $query->latest()->paginate(10)->withQueryString();
         return view("$role.data-cpcl.terverifikasi", compact('data'));
@@ -67,18 +53,39 @@ class CpclController extends Controller
     public function belum(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::where('status', '!=', 'terverifikasi');
+        $query = Cpcl::with('alamat')->where('status', '!=', 'terverifikasi');
 
-        if ($request->filled('kecamatan'))    $query->where('lokasi',        'LIKE', '%' . $request->kecamatan . '%');
-        if ($request->filled('rencana_usaha')) $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
-        if ($request->filled('search')) {
-            $s = $request->search;
-            $query->where(fn($q) => $q->where('nama_kelompok','LIKE',"%$s%")->orWhere('nama_ketua','LIKE',"%$s%")->orWhere('nik_ketua','LIKE',"%$s%"));
-        }
+        $this->applyFilters($query, $request);
 
         $data = $query->latest()->paginate(10)->withQueryString();
         return view("$role.data-cpcl.belum-verifikasi", compact('data'));
     }
+
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->filled('kecamatan')) {
+            $query->whereHas('alamat', fn($q) =>
+                $q->where('kecamatan', 'LIKE', '%' . $request->kecamatan . '%')
+            );
+        }
+
+        if ($request->filled('rencana_usaha')) {
+            $query->where('rencana_usaha', 'LIKE', '%' . $request->rencana_usaha . '%');
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(fn($q) => $q
+                ->where('nama_kelompok', 'LIKE', "%$s%")
+                ->orWhere('nama_ketua',  'LIKE', "%$s%")
+                ->orWhere('nik_ketua',   'LIKE', "%$s%")
+            );
+        }
+    }
+
+    // =========================================================================
+    // CRUD VIEWS
+    // =========================================================================
 
     public function create()
     {
@@ -89,23 +96,27 @@ class CpclController extends Controller
     public function edit($id)
     {
         $role = $this->getRolePrefix();
-        $cpcl = Cpcl::findOrFail($id);
+        $cpcl = Cpcl::with('alamat')->findOrFail($id);
         return view("$role.data-cpcl.form", compact('cpcl'));
     }
 
     public function detail($id)
     {
         $role = $this->getRolePrefix();
-        $cpcl = Cpcl::findOrFail($id);
+        $cpcl = Cpcl::with('alamat')->findOrFail($id);
         return view("$role.data-cpcl.detail", compact('cpcl'));
     }
 
     public function laporan()
     {
         $role = $this->getRolePrefix();
-        $data = Cpcl::where('status', 'terverifikasi')->latest()->get();
+        $data = Cpcl::with('alamat')->where('status', 'terverifikasi')->latest()->get();
         return view("$role.data-cpcl.laporan", compact('data'));
     }
+
+    // =========================================================================
+    // STORE & UPDATE
+    // =========================================================================
 
     public function store(Request $request)
     {
@@ -117,7 +128,7 @@ class CpclController extends Controller
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil ditambahkan');
         } catch (\Throwable $e) {
             Log::error('CPCL STORE FAILED: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan data');
+            return back()->withInput()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
 
@@ -131,36 +142,47 @@ class CpclController extends Controller
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil diperbarui');
         } catch (\Throwable $e) {
             Log::error('CPCL UPDATE FAILED: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memperbarui data');
+            return back()->withInput()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
         }
     }
 
-    private function validateCpcl(Request $request, $isUpdate = false)
+    private function validateCpcl(Request $request, bool $isUpdate = false): array
     {
-        $rules = [
+        return $request->validate([
             'nama_kelompok' => 'required|string|max:255',
             'nama_ketua'    => 'required|string|max:255',
             'nik_ketua'     => 'required|digits:16',
             'bidang'        => 'required|in:HARTIBUN,PANGAN',
             'rencana_usaha' => 'required|string',
+            
+            'kd_kab'        => 'required|string',
+            'kabupaten'     => 'required|string',
+            'kd_kec'        => 'required|string',
+            'kecamatan'     => 'required|string',
+            'kd_desa'       => 'required|string',
+            'desa'          => 'required|string',
+            // Data lahan
             'lokasi'        => 'required|string',
             'luas_lahan'    => 'required|numeric|min:0',
             'lama_berdiri'  => 'required|integer|min:0',
             'hasil_panen'   => 'required|numeric|min:0',
             'status_lahan'  => 'required|in:milik,sewa,garapan',
+            // File
             'file_proposal' => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf|max:2048',
             'file_ktp'      => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf,jpg,jpeg,png|max:2048',
             'file_sk'       => 'nullable|mimes:pdf|max:2048',
             'foto_lahan'    => 'nullable|image|mimes:jpg,jpeg,png|max:3072',
-        ];
-
-        return $request->validate($rules);
+        ]);
     }
+
+    // =========================================================================
+    // VERIFIKASI
+    // =========================================================================
 
     public function showVerification($id)
     {
         $role     = $this->getRolePrefix();
-        $cpcl     = Cpcl::findOrFail($id);
+        $cpcl     = Cpcl::with('alamat')->findOrFail($id);
         $kriteria = Kriteria::with('subKriteria')->get();
         return view("$role.data-cpcl.verifikasi", compact('cpcl', 'kriteria'));
     }
@@ -190,18 +212,14 @@ class CpclController extends Controller
                 'timestamp' => now()->toDateTimeString(),
             ]);
 
-            // Setelah verifikasi → kembali ke daftar, bukan langsung ke perhitungan.
-            // Perhitungan fuzzy dilakukan secara massal dari halaman Ranking.
-            $pesan = match($request->status) {
+            $pesan = match ($request->status) {
                 'terverifikasi'   => 'CPCL berhasil diverifikasi dan masuk antrian perhitungan.',
                 'perlu_perbaikan' => 'CPCL dikembalikan untuk perbaikan.',
                 'ditolak'         => 'CPCL telah ditolak.',
                 default           => 'Status CPCL berhasil diperbarui.',
             };
 
-            return redirect()
-                ->route("$role.cpcl.index")
-                ->with('success', $pesan);
+            return redirect()->route("$role.cpcl.index")->with('success', $pesan);
 
         } catch (\Throwable $e) {
             Log::error('CPCL VERIFICATION FAILED', [
@@ -209,11 +227,13 @@ class CpclController extends Controller
                 'error_message' => $e->getMessage(),
             ]);
 
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal memverifikasi data: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memverifikasi data: ' . $e->getMessage());
         }
     }
+
+    // =========================================================================
+    // DELETE
+    // =========================================================================
 
     public function destroy($id)
     {

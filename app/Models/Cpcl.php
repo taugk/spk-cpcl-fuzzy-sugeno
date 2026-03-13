@@ -20,13 +20,14 @@ class Cpcl extends Model
         'nik_ketua',
         'bidang',
         'rencana_usaha',
+        
         'lokasi',
         'luas_lahan',
         'status_lahan',
         'lama_berdiri',
         'hasil_panen',
         'latitude',
-        'longitude',
+        'longitude',        
         'file_proposal',
         'file_ktp',
         'file_sk',
@@ -123,5 +124,10 @@ public function getFileSkUrlAttribute()
     public function hasilFuzzy()
     {
         return $this->hasOne(HasilFuzzy::class);
+    }
+
+    public function alamat()
+    {
+        return $this->belongsTo(Alamat::class, 'alamat_id');
     }
 }
