@@ -22,6 +22,9 @@ class Alamat extends Model
         'desa'
     ];
 
+    
+
+
     public function cpcl()
     {
         return $this->hasOne(Cpcl::class, 'alamat_id');

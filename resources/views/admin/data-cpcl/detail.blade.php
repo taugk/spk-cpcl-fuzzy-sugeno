@@ -66,11 +66,25 @@
                             </div>
                         </div>
                         <div class="d-flex align-items-start">
-                            <div class="badge bg-label-secondary p-2 rounded me-3">
+                            <div class="badge bg-label-secondary p-2 rounded me-3 flex-shrink-0">
                                 <i class="bx bx-map-pin fs-4 text-danger"></i>
                             </div>
-                            <p class="mb-0 small text-muted lh-base">{{ $cpcl->lokasi }}</p>
-                        </div>
+                                <div>
+                                    {{-- Menampilkan detail jalan / blok / patokan --}}
+                                    <p class="mb-1 small fw-medium text-dark lh-base">
+                                        {{ $cpcl->lokasi ?? 'Detail alamat belum diatur' }}
+                                    </p>
+                                    
+                                    {{-- Menampilkan wilayah administratif --}}
+                                    @if(isset($cpcl->alamat->desa) || isset($cpcl->alamat->kecamatan))
+                                        <small class="text-muted d-block lh-sm">
+                                            Desa {{ $cpcl->alamat->desa ?? '-' }}, 
+                                            Kec. {{ $cpcl->alamat->kecamatan ?? '-' }}, <br>
+                                            {{ ucwords(strtolower($cpcl->alamat->kabupaten ?? 'Kabupaten Kuningan')) }}
+                                        </small>
+                                    @endif
+                                </div>
+                            </div>
                     </div>
                 </div>
 

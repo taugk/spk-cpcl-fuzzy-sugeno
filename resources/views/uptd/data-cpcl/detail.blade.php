@@ -46,7 +46,7 @@
                                 'perlu_perbaikan' => ['class' => 'bg-label-warning', 'label' => 'Perlu Perbaikan'],
                                 'ditolak' => ['class' => 'bg-label-danger', 'label' => 'Ditolak'],
                             ];
-                            $currentStatus = $statusConfig[$status] ?? ['class' => 'bg-label-secondary', 'label' => $status];
+                            $currentStatus = $statusConfig[$status] ?? ['class' => 'bg-label-secondary', 'label' => str_replace('_', ' ', $status)];
                         @endphp
 
                         <span class="badge {{ $currentStatus['class'] }} rounded-pill px-3 mb-4 text-uppercase">
@@ -69,7 +69,7 @@
 
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-body pt-4">
-                        <h6 class="text-muted text-uppercase small fw-bold mb-3 border-bottom pb-2">Kontak Utama</h6>
+                        <h6 class="text-muted text-uppercase small fw-bold mb-3 border-bottom pb-2">Kontak Utama & Lokasi</h6>
                         <div class="d-flex align-items-center mb-3">
                             <div class="badge bg-label-secondary p-2 rounded me-3">
                                 <i class="bx bx-user fs-4 text-primary"></i>
@@ -79,11 +79,17 @@
                                 <small class="text-muted">NIK: {{ $cpcl->nik_ketua }}</small>
                             </div>
                         </div>
-                        <div class="d-flex align-items-start">
+                        <div class="d-flex align-items-start mt-3">
                             <div class="badge bg-label-secondary p-2 rounded me-3">
                                 <i class="bx bx-map-pin fs-4 text-danger"></i>
                             </div>
-                            <p class="mb-0 small text-muted lh-base">{{ $cpcl->lokasi }}</p>
+                            <div>
+                                {{-- Memanggil detail alamat lengkap dari relasi --}}
+                                <p class="mb-1 small text-dark lh-base fw-medium">{{ $cpcl->lokasi ?? 'Detail alamat belum diatur' }}</p>
+                                @if(isset($cpcl->alamat->desa) || isset($cpcl->alamat->kecamatan))
+                                    <small class="text-muted d-block">Desa {{ $cpcl->alamat->desa ?? '-' }}, Kec. {{ $cpcl->alamat->kecamatan ?? '-' }}</small>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -116,7 +122,7 @@
                                 @else
                                 <div class="list-group-item d-flex align-items-center px-0 opacity-50">
                                     <i class="bx {{ $attr['icon'] }} text-secondary fs-4 me-3"></i>
-                                    <span class="flex-grow-1 small text-muted italic">{{ $attr['label'] }} (Tidak Ada)</span>
+                                    <span class="flex-grow-1 small text-muted fst-italic">{{ $attr['label'] }} (Tidak Ada)</span>
                                 </div>
                                 @endif
                             @endforeach
@@ -168,9 +174,12 @@
                                     <small class="text-muted">Koordinat Global (GPS)</small>
                                 </div>
                             </div>
-                            @if($cpcl->latitude)
+                            
+                            {{-- Memanggil kordinat dari relasi alamat --}}
+                            @if(isset($cpcl->latitude) && isset($cpcl->longitude))
                             <div class="text-end">
                                 <p class="mb-1 small fw-bold">{{ $cpcl->latitude }}, {{ $cpcl->longitude }}</p>
+                                {{-- Memperbaiki link ke Google Maps --}}
                                 <a href="https://www.google.com/maps?q={{ $cpcl->latitude }},{{ $cpcl->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
                                     <i class="bx bx-directions me-1"></i> Navigasi Maps
                                 </a>

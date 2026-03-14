@@ -126,7 +126,7 @@
                                             @if($kriteria->jenis_kriteria == 'diskrit')
                                                 <div class="d-flex justify-content-between align-items-center px-2">
                                                     <span class="text-muted small">Nilai Keanggotaan:</span>
-                                                    <strong>{{ $sub->nilai_diskrit }}</strong>
+                                                    <strong>{{ $sub->nilai_konsekuen }}</strong>
                                                 </div>
                                             @else
                                                 <div class="d-flex justify-content-center gap-2 small">

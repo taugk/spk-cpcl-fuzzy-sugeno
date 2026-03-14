@@ -109,17 +109,24 @@ class FuzzyController extends Controller
      * Tampilkan detail langkah-langkah fuzzy untuk 1 CPCL.
      */
     public function detail(int $id)
-    {
-        $cpcl = Cpcl::findOrFail($id);
+{
+    $cpcl = Cpcl::findOrFail($id);
 
-        if ($cpcl->status !== 'terverifikasi') {
-            return redirect()
-                ->route('admin.perhitungan.index')
-                ->with('warning', "CPCL #{$id} ({$cpcl->nama_kelompok}) belum terverifikasi.");
-        }
-
-        $hasil = FuzzySugenoService::hitung($id);
-
-        return view('admin.fuzzy-sugeno.perhitungan.detail', compact('hasil'));
+    if ($cpcl->status !== 'terverifikasi') {
+        return redirect()
+            ->route('admin.perhitungan.index')
+            ->with('warning', "CPCL #{$id} ({$cpcl->nama_kelompok}) belum terverifikasi.");
     }
+
+    // ✅ CEK SINKRONISASI DATA (Validator yang kita buat tadi)
+    $sinkron = FuzzySugenoService::cekSinkronisasiData($id);
+    if (!$sinkron['is_valid']) {
+        session()->flash('sync_error', $sinkron['messages']);
+    }
+
+    // Ambil hasil perhitungan
+    $hasil = FuzzySugenoService::hitung($id);
+
+    return view('admin.fuzzy-sugeno.perhitungan.detail', compact('hasil'));
+}
 }

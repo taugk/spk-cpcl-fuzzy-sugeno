@@ -10,24 +10,17 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 
 /**
- * Fuzzy Sugeno Orde Nol dengan Direct Evaluation
- * 
- * Perbaikan dari versi sebelumnya:
- * 1. Implementasi Sugeno Orde Nol yang benar (z = Σ(αᵢ × zᵢ) / Σ(αᵢ))
- * 2. Direct Evaluation: evaluasi semua kombinasi rule langsung
- * 3. Pendekatan Bahu (Shoulder): semakin tinggi nilai Z semakin layak
- * 4. Fix defuzzifikasi: menggunakan weighted average dengan konsekuen per rule
- * 5. Fallback yang lebih robust untuk nilai konsekuen dan input
+ * Fuzzy Sugeno Orde Nol - Final Production Version
+ * Fitur: Hybrid Data Source, Validator Sinkronisasi, Mass Ranking, & Robust Numeric Parsing
  */
 class FuzzySugenoService
 {
-    // =========================================================================
-    // 1. PUBLIC: Hitung + Simpan per ID
-    // =========================================================================
+    /**
+     * Menghitung dan menyimpan hasil ke database untuk 1 ID CPCL
+     */
     public static function hitungDanSimpan(int $cpcl_id): array
     {
-        Log::info("=== START: Hitung dan Simpan Fuzzy Sugeno | CPCL ID: {$cpcl_id} ===");
-        
+        Log::info("=== START: Hitung & Simpan Fuzzy Sugeno | CPCL ID: {$cpcl_id} ===");
         $hasil = self::hitung($cpcl_id);
 
         HasilFuzzy::updateOrCreate(
@@ -45,9 +38,9 @@ class FuzzySugenoService
         return $hasil;
     }
 
-    // =========================================================================
-    // 2. PUBLIC: Hitung SEMUA CPCL untuk Ranking
-    // =========================================================================
+    /**
+     * Menghitung semua CPCL terverifikasi dan memberikan Ranking per Periode
+     */
     public static function hitungSemuaDanRanking(?string $periode = null): Collection
     {
         $query = Cpcl::where('status', 'terverifikasi');
@@ -56,24 +49,18 @@ class FuzzySugenoService
         }
         $cpclList = $query->get();
 
-        Log::info("=== START: Batch Hitung Semua CPCL ===", ['total' => $cpclList->count()]);
-
         $hasilList = [];
         foreach ($cpclList as $cpcl) {
             try {
                 $hasil = self::hitung($cpcl->id);
-                // Gabungkan data perhitungan dengan ID CPCL
                 $hasilList[] = array_merge(['cpcl_id' => $cpcl->id], $hasil);
             } catch (\Exception $e) {
                 Log::error("Gagal hitung CPCL ID {$cpcl->id}: " . $e->getMessage());
             }
         }
 
-        // Urutkan berdasarkan skor_akhir tertinggi (Descending)
-        // Semakin tinggi semakin layak (pendekatan bahu)
         $ranked = collect($hasilList)->sortByDesc('skor_akhir')->values();
 
-        // Simpan ke DB dalam transaksi agar aman
         DB::transaction(function () use ($ranked) {
             foreach ($ranked as $rank => $item) {
                 HasilFuzzy::updateOrCreate(
@@ -94,18 +81,8 @@ class FuzzySugenoService
         return $ranked;
     }
 
-    // =========================================================================
-    // 3. CORE: Fuzzy Sugeno Orde Nol Logic
-    // =========================================================================
     /**
-     * Hitung Fuzzy Sugeno Orde Nol untuk 1 CPCL
-     * 
-     * Alur:
-     * 1. Fuzzifikasi: Konversi input crisp → derajat keanggotaan per himpunan fuzzy
-     * 2. Rule Evaluation: Evaluasi semua rule dengan MIN (t-norm Mamdani)
-     * 3. Defuzzifikasi Sugeno: z_out = Σ(αᵢ × zᵢ) / Σ(αᵢ)
-     * 4. Scaling: Konversi z (0-1) ke skor (0-100)
-     * 5. Interpretasi: Status kelayakan berdasarkan pendekatan bahu
+     * CORE LOGIC: Perhitungan Fuzzy Sugeno Orde Nol
      */
     public static function hitung(int $cpcl_id): array
     {
@@ -113,101 +90,82 @@ class FuzzySugenoService
         $kriteriaList = Kriteria::with('subKriteria')->orderBy('id')->get();
         $fuzzifikasi  = [];
 
-        // ========== STEP 1: FUZZIFIKASI ==========
-        // Konversi input crisp (nilai terukur) menjadi derajat keanggotaan fuzzy
+        // ---------- STEP 1: FUZZIFIKASI ----------
         foreach ($kriteriaList as $kriteria) {
             $field = $kriteria->mapping_field;
             
-            // ✅ FIX v2.0.3: Handle kriteria diskrit & kontinu dengan benar
             if ($kriteria->jenis_kriteria === 'kontinu') {
-                // Kriteria kontinu: ambil langsung dari field di tabel cpcl
-                $rawInput = (string) ($cpcl->{$field} ?? '');
+                // 1. KONTINU: Ambil nilai riil murni dari tabel CPCL (Lahan, Pengalaman, Panen)
+                $inputVal = $cpcl->{$field} ?? '0';
             } else {
-                // Kriteria diskrit: ambil dari field mapping di tabel cpcl
-                $rawInput = (string) ($cpcl->{$field} ?? '');
-                
-                // ✅ Fallback: Jika field kosong, coba dari cpcl_penilaian
-                if (empty($rawInput)) {
-                    $rawInput = trim(DB::table('cpcl_penilaian')
-                        ->where('cpcl_id', $cpcl_id)
-                        ->where('kriteria_id', $kriteria->id)
-                        ->value('nilai') ?? '');
+                // 2. DISKRIT: Ambil hasil verifikasi kategori dari tabel cpcl_penilaian
+                $inputVal = DB::table('cpcl_penilaian')
+                    ->where('cpcl_id', $cpcl_id)
+                    ->where('kriteria_id', $kriteria->id)
+                    ->value('nilai');
+
+                if (is_null($inputVal) || $inputVal === '') {
+                    $inputVal = $cpcl->{$field} ?? '-';
                 }
             }
 
-            $inputVal = empty($rawInput) ? '0' : $rawInput;
-            $himpunan = [];
+            $inputString = (string) $inputVal;
+            $himpunanAktif = [];
 
-            // Hitung derajat keanggotaan untuk setiap himpunan fuzzy
-           
-foreach ($kriteria->subKriteria as $sub) {
-    $mu = self::hitungMu($sub, $inputVal);
-    $k = (float) ($sub->nilai_konsekuen ?? 0);
-    
-    if ($k == 0) {
-        $k = self::getFallbackK($sub->nama_sub_kriteria);
-    }
+            foreach ($kriteria->subKriteria as $sub) {
+                $mu = self::hitungMu($sub, $inputString);
+                
+                $z_konsekuen = (float) ($sub->nilai_konsekuen ?? 0);
+                if ($z_konsekuen <= 0) {
+                    $z_konsekuen = self::getFallbackK($sub->nama_sub_kriteria);
+                }
 
-    // Hanya masukkan himpunan yang aktif (μ > 0)
-    // TAMBAHKAN 'params' agar frontend tahu bentuk kurvanya
-    if ($mu > 0) {
-        $himpunan[] = [
-            'nama' => $sub->nama_sub_kriteria, 
-            'mu'   => $mu, 
-            'k'    => $k,
-            'params' => [
-                'a'    => (float)$sub->batas_bawah,
-                'b'    => (float)$sub->batas_tengah_1,
-                'c'    => (float)$sub->batas_tengah_2,
-                'd'    => (float)$sub->batas_atas,
-                'tipe' => $sub->tipe_kurva // 'bahu_kiri', 'bahu_kanan', atau 'trapesium'
-            ]
-        ];
-    }
-}
+                if ($mu > 0) {
+                    $himpunanAktif[] = [
+                        'nama'   => $sub->nama_sub_kriteria, 
+                        'mu'     => round($mu, 4), 
+                        'z'      => $z_konsekuen, 
+                        'k'      => $z_konsekuen, 
+                        'params' => [
+                            'a' => $sub->batas_bawah, 'b' => $sub->batas_tengah_1,
+                            'c' => $sub->batas_tengah_2, 'd' => $sub->batas_atas,
+                            'tipe' => $sub->tipe_kurva
+                        ]
+                    ];
+                }
+            }
 
             $fuzzifikasi[] = [
-                'kode'              => $kriteria->kode_kriteria, 
-                'nama'              => $kriteria->nama_kriteria,
-                'input'             => $inputVal,
-                'jenis_kriteria'    => $kriteria->jenis_kriteria,
-                'mapping_field'     => $field,
-                'himpunan'          => $himpunan,
-                'sub'               => $himpunan // Alias untuk kompatibilitas dengan view
+                'kode'     => $kriteria->kode_kriteria, 
+                'nama'     => $kriteria->nama_kriteria,
+                'input'    => $inputString,
+                'himpunan' => $himpunanAktif,
+                'sub'      => $himpunanAktif 
             ];
         }
 
-        // ========== STEP 2: RULE EVALUATION (Direct Evaluation) ==========
-        // Ekstrak himpunan aktif per kriteria
-        $himpunanAktif = [];
-        foreach ($fuzzifikasi as $kFuzz) {
-            if (!empty($kFuzz['himpunan'])) {
-                $himpunanAktif[$kFuzz['kode']] = $kFuzz['himpunan'];
+        // ---------- STEP 2: EVALUASI RULE ----------
+        $inputRules = [];
+        foreach ($fuzzifikasi as $f) {
+            if (!empty($f['himpunan'])) {
+                $inputRules[$f['kode']] = $f['himpunan'];
             }
         }
 
-        $rules = [];
-        $sumAlphaZ = 0.0;  // Σ(αᵢ × zᵢ)
-        $sumAlpha  = 0.0;  // Σ(αᵢ)
+        $rules = []; $sumAlphaZ = 0.0; $sumAlpha = 0.0;
 
-        // Direct Evaluation: Ciptakan semua kombinasi rule (Cartesian Product)
-        if (!empty($himpunanAktif)) {
-            $kombinasi = self::kartesian($himpunanAktif);
-            
+        if (!empty($inputRules)) {
+            $kombinasi = self::kartesian($inputRules);
             foreach ($kombinasi as $idx => $combo) {
-                // α = MIN(μ₁, μ₂, ..., μₙ) - t-norm Mamdani
                 $muValues = array_column($combo, 'mu');
                 $alpha    = min($muValues);
 
-                // z_rule = AVERAGE(k₁, k₂, ..., kₙ) - Sugeno Orde Nol
-                $kValues  = array_column($combo, 'k');
-                $zRule    = count($kValues) > 0 ? array_sum($kValues) / count($kValues) : 0.0;
+                $zValues  = array_column($combo, 'z');
+                $zRule    = count($zValues) > 0 ? array_sum($zValues) / count($zValues) : 0.0;
 
-                // Akumulasi untuk defuzzifikasi
-                $sumAlphaZ += $alpha * $zRule;
+                $sumAlphaZ += ($alpha * $zRule);
                 $sumAlpha  += $alpha;
 
-                // Susun anteceden untuk keperluan log
                 $anteceden = [];
                 foreach ($combo as $kode => $h) {
                     $anteceden[] = ['kriteria' => $kode, 'himpunan' => $h['nama']];
@@ -216,195 +174,135 @@ foreach ($kriteria->subKriteria as $sub) {
                 $rules[] = [
                     'rule_id'   => 'R' . str_pad($idx + 1, 3, '0', STR_PAD_LEFT),
                     'anteceden' => $anteceden,
-                    'alpha'     => round($alpha, 6), 
-                    'z_rule'    => round($zRule, 6),
-                    'alpha_x_z' => round($alpha * $zRule, 6)
+                    'alpha'     => round($alpha, 4), 
+                    'z_rule'    => round($zRule, 4),
+                    'alpha_x_z' => round($alpha * $zRule, 4)
                 ];
             }
         }
 
-        // ========== STEP 3: DEFUZZIFIKASI SUGENO ORDE Nmethodology ==========
-        // Rumus Sugeno Orde Nol: z_out = Σ(αᵢ × zᵢ) / Σ(αᵢ)
-        $z = $sumAlpha > 0 ? ($sumAlphaZ / $sumAlpha) : 0.0;
-        $z = round($z, 6);
+        // ---------- STEP 3: DEFUZZIFIKASI ----------
+        $z_final = $sumAlpha > 0 ? ($sumAlphaZ / $sumAlpha) : 0.0;
+        $skala   = self::getSkalaPrioritas($z_final);
 
-        // ========== STEP 4: SCALING & INTERPRETASI ==========
-        // Konversi z (0-1) ke skor (0-100) dengan pendekatan bahu
-        // Semakin tinggi Z semakin layak
-        $skala = self::getSkalaPrioritas($z);
-
-        // ========== STEP 5: PENGEMBALIAN HASIL ==========
         return [
-            // Data untuk View (detail.blade.php)
             'cpcl'             => $cpcl,
             'fuzzifikasi'      => $fuzzifikasi,
             'rules'            => $rules,
-            'sum_alpha_z'      => round($sumAlphaZ, 6),
-            'sum_alpha'        => round($sumAlpha, 6),
-            
-            // Data untuk Database
-            'alpha'            => !empty($rules) ? max(array_column($rules, 'alpha')) : 0.0,
-            'z'                => $z,
-            'skor_akhir'       => round($z * 100, 2),
+            'sum_alpha_z'      => round($sumAlphaZ, 4),
+            'sum_alpha'        => round($sumAlpha, 4),
+            'alpha'            => !empty($rules) ? max(array_column($rules, 'alpha')) : 0,
+            'z'                => round($z_final, 4),
+            'skor_akhir'       => round($z_final * 100, 2),
             'status_kelayakan' => $skala['status'],
             'skala_prioritas'  => $skala['prioritas'],
             'interpretasi'     => $skala['interpretasi'],
         ];
     }
 
-    // =========================================================================
-    // 4. HELPERS
-    // =========================================================================
-    
     /**
-     * Memberikan nilai konsekuen default (Sugeno Orde Nol)
-     * Jika nilai di database = 0, gunakan nilai berdasarkan semantik nama
-     * 
-     * Skala default:
-     * - Sangat/Tinggi/Luas: 1.0 (paling layak)
-     * - Sedang/Cukup/Lengkap: 0.7 (layak)
-     * - Rendah/Kurang/Sempit: 0.4 (kurang layak)
-     * - Default: 0.5
+     * VALIDATOR: Sinkronisasi aturan Hybrid
      */
-    private static function getFallbackK(string $namaSub): float
+    public static function cekSinkronisasiData(int $cpcl_id): array
     {
-        $n = strtolower($namaSub);
-        
-        return match (true) {
-            str_contains($n, 'sangat') 
-            || str_contains($n, 'luas') 
-            || str_contains($n, 'tinggi')
-            || str_contains($n, 'baik')
-            || str_contains($n, 'lengkap') => 1.0,
-            
-            str_contains($n, 'sedang') 
-            || str_contains($n, 'cukup')
-            || str_contains($n, 'menengah') => 0.7,
-            
-            str_contains($n, 'rendah') 
-            || str_contains($n, 'kurang')
-            || str_contains($n, 'sempit')
-            || str_contains($n, 'buruk')
-            || str_contains($n, 'baru') => 0.4,
-            
-            default => 0.5,
-        };
+        $cpcl = Cpcl::findOrFail($cpcl_id);
+        $kriteriaList = Kriteria::with('subKriteria')->get();
+        $errors = [];
+
+        foreach ($kriteriaList as $kriteria) {
+            $field = $kriteria->mapping_field;
+
+            if ($kriteria->jenis_kriteria === 'kontinu') {
+                $nilai = $cpcl->{$field} ?? null;
+                // Bersihkan teks (handling jika 5.0 atau "5 Tahun")
+                $clean = preg_replace('/[^0-9.]/', '', (string)$nilai);
+                
+                if (is_null($nilai) || $nilai === '') {
+                    $errors[] = "Cek {$kriteria->kode_kriteria}: Data profil kosong.";
+                } elseif (!is_numeric($clean)) {
+                    $errors[] = "Cek {$kriteria->kode_kriteria}: Nilai '{$nilai}' bukan angka valid.";
+                }
+            } else {
+                $nilai = DB::table('cpcl_penilaian')->where('cpcl_id', $cpcl_id)->where('kriteria_id', $kriteria->id)->value('nilai');
+                if (is_null($nilai) || $nilai === '') {
+                    $errors[] = "Cek {$kriteria->kode_kriteria}: Belum diverifikasi admin.";
+                } else {
+                    $isMatch = false;
+                    foreach ($kriteria->subKriteria as $sub) {
+                        if (strtolower(trim((string)$nilai)) === strtolower(trim($sub->nama_sub_kriteria))) {
+                            $isMatch = true; break;
+                        }
+                    }
+                    if (!$isMatch) {
+                        $errors[] = "Cek {$kriteria->kode_kriteria}: Kategori '{$nilai}' tidak valid.";
+                    }
+                }
+            }
+        }
+        return ['is_valid' => empty($errors), 'messages' => $errors];
     }
 
     /**
-     * Menghitung derajat keanggotaan (μ) berdasarkan tipe kurva
-     * 
-     * Supported Curves:
-     * - bahu_kiri: Derajat tinggi di awal, menurun ke nol (≤ d)
-     * - bahu_kanan: Derajat rendah di awal, naik ke satu (≥ b)
-     * - trapesium: Naik (a→b), tetap tinggi (b→c), turun (c→d)
-     * 
-     * Parameter:
-     * - a (batas_bawah): Batas paling bawah
-     * - b (batas_tengah_1): Batas naik
-     * - c (batas_tengah_2): Batas turun
-     * - d (batas_atas): Batas paling atas
+     * HANDLING FLOAT & STRING: Membersihkan input agar sinkron dengan kurva fuzzy
      */
     private static function hitungMu(object $sub, string $input): float
     {
-        // Jika input non-numerik, gunakan string matching
-        if (!is_numeric($input)) {
-            return strtolower($input) === strtolower(trim($sub->nama_sub_kriteria)) ? 1.0 : 0.0;
+        if ($sub->tipe_kurva === 'diskrit') {
+            return (strtolower(trim($input)) === strtolower(trim($sub->nama_sub_kriteria))) ? 1.0 : 0.0;
         }
 
-        $x = (float) $input;
-        $a = (float) ($sub->batas_bawah ?? 0);
-        $b = (float) ($sub->batas_tengah_1 ?? 0);
-        $c = (float) ($sub->batas_tengah_2 ?? 0);
-        $d = (float) ($sub->batas_atas ?? 0);
-
-        // Validasi parameter kurva untuk menghindari division by zero
-        if ($b == $a) $b = $a + 0.001;
-        if ($c == $b) $c = $b + 0.001;
-        if ($d == $c) $d = $c + 0.001;
+        // ✅ REVISI HANDLING: Menghapus semua karakter kecuali angka dan titik desimal
+        // Ini memastikan nilai seperti "5.0", "5", atau "5 Tahun" semuanya menjadi float(5.0)
+        $cleanInput = preg_replace('/[^0-9.]/', '', $input);
+        
+        if (!is_numeric($cleanInput)) return 0.0;
+        
+        $x = (float) $cleanInput;
+        $a = (float) $sub->batas_bawah; 
+        $b = (float) $sub->batas_tengah_1;
+        $c = (float) $sub->batas_tengah_2; 
+        $d = (float) $sub->batas_atas;
 
         return match ($sub->tipe_kurva) {
-            // Bahu Kiri: Derajat 1 sampai c, kemudian turun linear menuju d
-            'bahu_kiri'  => ($x <= $c) 
-                ? 1.0 
-                : (($x >= $d) ? 0.0 : (($d - $x) / ($d - $c))),
-
-            // Trapesium: Naik (a→b), plateau (b→c), turun (c→d)
-            'trapesium'  => ($x <= $a || $x >= $d) 
-                ? 0.0 
-                : (($x >= $b && $x <= $c) 
-                    ? 1.0 
-                    : ($x < $b 
-                        ? (($x - $a) / ($b - $a)) 
-                        : (($d - $x) / ($d - $c)))),
-
-            // Bahu Kanan: Derajat 0 sampai a, kemudian naik linear menuju b
-            'bahu_kanan' => ($x <= $a) 
-                ? 0.0 
-                : (($x >= $b) ? 1.0 : (($x - $a) / ($b - $a))),
-
+            'bahu_kiri'  => ($x <= $c) ? 1.0 : (($x >= $d) ? 0.0 : ($d - $x) / ($d - $c)),
+            'bahu_kanan' => ($x <= $a) ? 0.0 : (($x >= $b) ? 1.0 : ($x - $a) / ($b - $a)),
+            'trapesium'  => ($x <= $a || $x >= $d) ? 0.0 : 
+                            (($x >= $b && $x <= $c) ? 1.0 : 
+                            (($x < $b) ? ($x - $a) / ($b - $a) : ($d - $x) / ($d - $c))),
             default      => 0.0,
         };
     }
 
-    /**
-     * Menghasilkan kombinasi rule melalui Cartesian Product
-     * 
-     * Contoh:
-     * Input: ['K1' => [h1, h2], 'K2' => [h3, h4]]
-     * Output: [[K1=>h1, K2=>h3], [K1=>h1, K2=>h4], [K1=>h2, K2=>h3], [K1=>h2, K2=>h4]]
-     */
     private static function kartesian(array $arrays): array
     {
         $result = [[]];
-        
         foreach ($arrays as $kode => $pool) {
             $append = [];
             foreach ($result as $existing) {
-                foreach ($pool as $item) {
-                    $append[] = $existing + [$kode => $item];
-                }
+                foreach ($pool as $item) { $append[] = $existing + [$kode => $item]; }
             }
             $result = $append;
         }
-        
         return $result;
     }
 
-    /**
-     * Menentukan skala prioritas dari nilai Z (0-1)
-     * 
-     * Pendekatan Bahu: Semakin tinggi Z semakin layak
-     * 
-     * Skala:
-     * - Z > 0.80: Prioritas I (Sangat Diprioritaskan) → Layak
-     * - 0.60 < Z ≤ 0.80: Prioritas II (Diprioritaskan) → Layak
-     * - 0.40 < Z ≤ 0.60: Prioritas III (Dipertimbangkan) → Tidak Layak
-     * - Z ≤ 0.40: Prioritas IV (Tidak Diprioritaskan) → Tidak Layak
-     */
+    private static function getFallbackK(string $namaSub): float
+    {
+        $n = strtolower($namaSub);
+        return match (true) {
+            str_contains($n, 'sangat') || str_contains($n, 'luas') || str_contains($n, 'tinggi') || str_contains($n, 'baik') || str_contains($n, 'milik') => 1.0,
+            str_contains($n, 'sedang') || str_contains($n, 'cukup') || str_contains($n, 'sewa') => 0.7,
+            default => 0.4,
+        };
+    }
+
     private static function getSkalaPrioritas(float $z): array
     {
         return match (true) {
-            $z > 0.80 => [
-                'prioritas'   => 'Prioritas I',
-                'interpretasi' => 'Sangat Diprioritaskan',
-                'status'       => 'Layak'
-            ],
-            $z > 0.60 => [
-                'prioritas'    => 'Prioritas II',
-                'interpretasi' => 'Diprioritaskan',
-                'status'       => 'Layak'
-            ],
-            $z > 0.40 => [
-                'prioritas'    => 'Prioritas III',
-                'interpretasi' => 'Dipertimbangkan',
-                'status'       => 'Tidak Layak'
-            ],
-            default   => [
-                'prioritas'    => 'Prioritas IV',
-                'interpretasi' => 'Tidak Diprioritaskan',
-                'status'       => 'Tidak Layak'
-            ],
+            $z >= 0.80 => ['prioritas' => 'Prioritas I', 'interpretasi' => 'Sangat Diprioritaskan', 'status' => 'Layak'],
+            $z >= 0.60 => ['prioritas' => 'Prioritas II', 'interpretasi' => 'Diprioritaskan', 'status' => 'Layak'],
+            $z >= 0.40 => ['prioritas' => 'Prioritas III', 'interpretasi' => 'Dipertimbangkan', 'status' => 'Tidak Layak'],
+            default    => ['prioritas' => 'Prioritas IV', 'interpretasi' => 'Tidak Diprioritaskan', 'status' => 'Tidak Layak'],
         };
     }
 }

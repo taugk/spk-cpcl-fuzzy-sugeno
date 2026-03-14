@@ -34,14 +34,13 @@ class Cpcl extends Model
         'foto_lahan',
         'status',
         'catatan_verifikator',
-        'skor_fuzzy'
+        'alamat_id',
     ];
 
     protected $casts = [
         'luas_lahan' => 'float',
         'hasil_panen' => 'float',
         'lama_berdiri' => 'integer',
-        'skor_fuzzy' => 'float',
     ];
 
     // ============================================================
@@ -101,6 +100,9 @@ public function getFileSkUrlAttribute()
             default => 'bg-label-secondary',
         };
     }
+
+    //jika berhasil buat cpcl, maka buat alamat baru, lalu hubungkan cpcl dengan alamat tsb melalui alamat_id
+
 
     // ============================================================
     // BUSINESS LOGIC

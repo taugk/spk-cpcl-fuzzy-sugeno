@@ -80,102 +80,66 @@ class KriteriaController extends Controller
 
 public function storeSub(Request $request)
 {
-   
-
-    try {
-
-        $validated = $request->validate([
-            'kriteria_id'      => 'required|exists:kriteria,id',
-            'nama_sub_kriteria'   => 'required|array',
-            'nama_sub_kriteria.*'       => 'required|string|max:255',
-            'batas_bawah'      => 'required|array',
-            'batas_bawah.*'    => 'required|numeric|min:0',
-            'batas_tengah'     => 'required|array',
-            'batas_tengah.*'   => 'required|numeric|min:0',
-            'batas_atas'       => 'required|array',
-            'batas_atas.*'     => 'required|numeric|min:0',
-        ]);
-
-
-
-        $kriteriaId   = $validated['kriteria_id'];
-        $namaSubs     = $validated['nama_sub_kriteria'];
-        $batasBawah   = $validated['batas_bawah'];
-        $batasTengah  = $validated['batas_tengah'];
-        $batasAtas    = $validated['batas_atas'];
-
-        DB::transaction(function () use ($kriteriaId, $namaSubs, $batasBawah, $batasTengah, $batasAtas) {
-
-            foreach ($namaSubs as $index => $nama) {
-
-                
-
-                SubKriteria::create([
-                    'kriteria_id'       => $kriteriaId,
-                    'nama_sub_kriteria' => $nama,
-                    'batas_bawah'       => $batasBawah[$index],
-                    'batas_tengah'      => $batasTengah[$index],
-                    'batas_atas'        => $batasAtas[$index],
-                ]);
-            }
-        });
-
-      
-        return redirect()->back()->with(
-            'success',
-            count($namaSubs) . ' Sub-kriteria berhasil ditambahkan.'
-        );
-
-    } catch (\Exception $e) {
-
-        
-
-        return redirect()->back()->with('error', 'Terjadi kesalahan. Cek log.');
-    }
-}
-
-public function updateSub(Request $request, string $id)
-{
-    $request->validate([
-        'kriteria_id'      => 'required|exists:kriteria,id',
-        'nama_sub_kriteria'         => 'required|array',
-        'nama_sub_kriteria.*'       => 'required|string|max:255',
-        'batas_bawah'      => 'required|array',
-        'batas_bawah.*'    => 'required|numeric|min:0',
-        'batas_tengah'     => 'required|array',
-        'batas_tengah.*'   => 'required|numeric|min:0',
-        'batas_atas'       => 'required|array',
-        'batas_atas.*'     => 'required|numeric|min:0',
+    $validated = $request->validate([
+        'kriteria_id'          => 'required|exists:kriteria,id',
+        'nama_sub_kriteria'    => 'required|array',
+        'nama_sub_kriteria.*'  => 'required|string|max:255',
+        'tipe_kurva'           => 'required|array',
+        'tipe_kurva.*'         => 'required|in:bahu_kiri,trapesium,bahu_kanan,diskrit',
+        // Validasi nullable karena tergantung tipe kurva
+        'batas_bawah.*'        => 'nullable|numeric',
+        'batas_tengah_1.*'     => 'nullable|numeric',
+        'batas_tengah_2.*'     => 'nullable|numeric',
+        'batas_atas.*'         => 'nullable|numeric',
+        'nilai_diskrit.*'      => 'nullable|numeric|min:0|max:1',
     ]);
 
-    $kriteriaId   = $request->kriteria_id;
-    $namaSubs     = $request->nama_sub_kriteria;
-    $batasBawah   = $request->batas_bawah;
-    $batasTengah  = $request->batas_tengah;
-    $batasAtas    = $request->batas_atas;
-
-    DB::transaction(function () use ($kriteriaId, $namaSubs, $batasBawah, $batasTengah, $batasAtas) {
-
-        // Hapus lama
-        SubKriteria::where('kriteria_id', $kriteriaId)->delete();
-
-        foreach ($namaSubs as $index => $nama) {
+    DB::transaction(function () use ($request) {
+        foreach ($request->nama_sub_kriteria as $index => $nama) {
             SubKriteria::create([
-                'kriteria_id'       => $kriteriaId,
+                'kriteria_id'       => $request->kriteria_id,
                 'nama_sub_kriteria' => $nama,
-                'batas_bawah'       => $batasBawah[$index],
-                'batas_tengah'      => $batasTengah[$index],
-                'batas_atas'        => $batasAtas[$index],
+                'tipe_kurva'        => $request->tipe_kurva[$index],
+                'batas_bawah'       => $request->batas_bawah[$index] ?? null,
+                'batas_tengah_1'    => $request->batas_tengah_1[$index] ?? null,
+                'batas_tengah_2'    => $request->batas_tengah_2[$index] ?? null,
+                'batas_atas'        => $request->batas_atas[$index] ?? null,
+                'nilai_konsekuen'   => $request->nilai_diskrit[$index] ?? null, // Sesuaikan nama kolom migration
             ]);
         }
     });
 
-    return redirect()->back()->with(
-        'success',
-        'Grup Sub-kriteria berhasil diperbarui.'
-    );
+    return redirect()->back()->with('success', 'Sub-kriteria berhasil disimpan.');
 }
 
+public function updateSub(Request $request, $id)
+{
+    // Gunakan logika yang sama dengan store, tapi hapus dulu data lama (Sync)
+    $request->validate([
+        'kriteria_id' => 'required|exists:kriteria,id',
+        'nama_sub_kriteria' => 'required|array',
+    ]);
+
+    DB::transaction(function () use ($request) {
+        // Hapus data lama berdasarkan kriteria_id
+        SubKriteria::where('kriteria_id', $request->kriteria_id)->delete();
+
+        foreach ($request->nama_sub_kriteria as $index => $nama) {
+            SubKriteria::create([
+                'kriteria_id'       => $request->kriteria_id,
+                'nama_sub_kriteria' => $nama,
+                'tipe_kurva'        => $request->tipe_kurva[$index],
+                'batas_bawah'       => $request->batas_bawah[$index] ?? null,
+                'batas_tengah_1'    => $request->batas_tengah_1[$index] ?? null,
+                'batas_tengah_2'    => $request->batas_tengah_2[$index] ?? null,
+                'batas_atas'        => $request->batas_atas[$index] ?? null,
+                'nilai_konsekuen'   => $request->nilai_diskrit[$index] ?? null,
+            ]);
+        }
+    });
+
+    return redirect()->back()->with('success', 'Sub-kriteria berhasil diperbarui.');
+}
     public function destroySub(string $id)
     {
         $subKriteria = SubKriteria::findOrFail($id);

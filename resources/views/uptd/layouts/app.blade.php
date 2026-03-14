@@ -121,70 +121,137 @@
 
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const loader = document.getElementById("global-loader");
+    document.addEventListener("DOMContentLoaded", function() {
+        const loader = document.getElementById("global-loader");
 
-            // A. SAAT HALAMAN SELESAI DIMUAT -> HILANGKAN LOADER
-            window.addEventListener("load", function() {
-                setTimeout(function() {
-                    loader.classList.add("loader-hidden");
-                }, 300); // Delay dikit biar mulus
-            });
-
-            // B. SAAT KLIK LINK (Pindah Halaman) -> MUNCULKAN LOADER
-            document.addEventListener("click", function(e) {
-                const link = e.target.closest("a");
-                
-                if (link) {
-                    const href = link.getAttribute("href");
-                    const target = link.getAttribute("target");
-
-                    // Validasi: Loader cuma muncul kalau linknya pindah halaman internal
-                    // Bukan modal, bukan javascript:, bukan link download
-                    if (
-                        href && 
-                        href !== "#" && 
-                        !href.startsWith("javascript") && 
-                        target !== "_blank" &&
-                        !link.hasAttribute('data-bs-toggle') && // Biar gak muncul pas buka dropdown/modal
-                        !link.hasAttribute('data-bs-dismiss')
-                    ) {
-                        loader.classList.remove("loader-hidden");
-                    }
-                }
-            });
-
-            // C. SAAT SUBMIT FORM (Simpan/Edit/Hapus) -> MUNCULKAN LOADER
-            document.addEventListener("submit", function(e) {
-                // Pastikan form valid dulu
-                if (e.target.checkValidity()) {
-                    loader.classList.remove("loader-hidden");
-                    
-                    // Opsional: Disable tombol submit biar gak diklik 2x
-                    const btn = e.target.querySelector('button[type="submit"]');
-                    if(btn) {
-                        // Simpan teks asli
-                        const originalText = btn.innerHTML;
-                        btn.disabled = true;
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Loading...';
-                        
-                        // Jaga-jaga kalau error validasi backend balik lagi, enable lagi (set timeout)
-                        setTimeout(() => {
-                            btn.disabled = false;
-                            btn.innerHTML = originalText;
-                        }, 8000); 
-                    }
-                }
-            });
-
-            // D. FIX TOMBOL BACK (Safari/Firefox Cache)
-            // Biar kalau user tekan tombol Back browser, loadingnya ilang
-            window.addEventListener("pageshow", function(event) {
-                if (event.persisted) {
-                    loader.classList.add("loader-hidden");
-                }
-            });
+        // A. HILANGKAN LOADER SAAT HALAMAN SELESAI DIMUAT
+        window.addEventListener("load", function() {
+            setTimeout(function() {
+                loader.classList.add("loader-hidden");
+            }, 300);
         });
+
+        // B. LOADER SAAT KLIK LINK
+        document.addEventListener("click", function(e) {
+            const link = e.target.closest("a");
+            if (link) {
+                const href = link.getAttribute("href");
+                const target = link.getAttribute("target");
+
+                if (href && href !== "#" && !href.startsWith("javascript") && 
+                    target !== "_blank" && !link.hasAttribute('data-bs-toggle') && 
+                    !link.hasAttribute('data-bs-dismiss')) {
+                    loader.classList.remove("loader-hidden");
+                }
+            }
+        });
+
+        // C. GLOBAL SWEETALERT UNTUK HAPUS
+        document.addEventListener("click", function(e) {
+            const btn = e.target.closest(".btn-delete-confirm");
+            if (btn) {
+                e.preventDefault();
+                const form = btn.closest("form");
+
+                Swal.fire({
+                    title: 'Yakin ingin menghapus?',
+                    text: "Data yang dihapus tidak dapat dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        confirmButton: 'btn btn-primary me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                    },
+                    buttonsStyling: false,
+                    // Tambahan: Backdrop agar sidebar tertutup overlay hitam
+                    backdrop: true 
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        loader.classList.remove("loader-hidden");
+                        form.submit();
+                    }
+                });
+            }
+        });
+
+        // D. LOADER & SWEETALERT SAAT SUBMIT FORM
+        document.addEventListener("submit", function(e) {
+            const form = e.target;
+            if (!form.checkValidity()) return;
+
+            if (form.classList.contains("form-confirm") && !form.dataset.confirmed) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Simpan Data?',
+                    text: "Pastikan data yang Anda masukkan sudah benar.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, Simpan!',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        confirmButton: 'btn btn-primary me-3',
+                        cancelButton: 'btn btn-label-secondary'
+                    },
+                    buttonsStyling: false,
+                    backdrop: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.dataset.confirmed = "true";
+                        loader.classList.remove("loader-hidden");
+                        form.submit();
+                    }
+                });
+            } else {
+                loader.classList.remove("loader-hidden");
+            }
+        });
+
+        // E. FIX TOMBOL BACK
+        window.addEventListener("pageshow", function(event) {
+            if (event.persisted) {
+                loader.classList.add("loader-hidden");
+            }
+        });
+    
+        // F. GLOBAL SWEETALERT UNTUK NOTIFIKASI SESSION DARI CONTROLLER
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false,
+                backdrop: true
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: '{{ session('error') }}',
+                backdrop: true
+            });
+        @endif
+
+        // Tambahan: Global SweetAlert untuk error validasi ($errors)
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal!',
+                html: `
+                    <ul class="text-start mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                `,
+                backdrop: true
+            });
+        @endif
+    });
     </script>
 
     @stack('scripts');

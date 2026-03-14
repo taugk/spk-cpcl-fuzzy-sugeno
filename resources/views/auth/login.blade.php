@@ -1,4 +1,4 @@
-@extends('main') {{-- Pastikan ini mengarah ke layout utama yang memuat CSS/JS --}}
+@extends('main')
 
 @section('title', 'Login - SPK CPCL Dinas Pertanian')
 
@@ -6,13 +6,11 @@
 
 {{-- CSS KHUSUS LOGIN --}}
 <style>
-    /* 1. Reset background agar bersih (Formal) */
     body {
         background-color: #f5f5f9 !important;
         background-image: none !important;
     }
 
-    /* 2. Sembunyikan dekorasi shape abstrak bawaan template Sneat */
     .authentication-wrapper::before,
     .authentication-wrapper::after,
     .authentication-inner::before,
@@ -20,7 +18,6 @@
         display: none !important;
     }
 
-    /* 3. Penyesuaian Logo & Teks */
     .app-brand {
         margin-bottom: 1.5rem !important;
     }
@@ -34,7 +31,7 @@
     .system-title {
         font-size: 1.3rem;
         font-weight: 800;
-        color: #696cff; /* Warna Primary Sneat */
+        color: #696cff; 
         margin-bottom: 5px;
     }
 </style>
@@ -47,7 +44,7 @@
                 <div class="card-body">
                     
                     <div class="app-brand justify-content-center flex-column mb-4">
-                        <div class="mb-3">
+                        <div class="mb-3 text-center">
                             <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo Kab Kuningan" width="60">
                         </div>
                         
@@ -58,9 +55,11 @@
                             <br><small class="text-muted fw-normal">Kabupaten Kuningan</small>
                         </div>
                     </div>
+
                     <form id="formAuthentication" class="mb-3" action="{{ route('login.proses') }}" method="POST">
                         @csrf
                         
+                        {{-- Field Username --}}
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <input
@@ -79,20 +78,28 @@
                             @enderror
                         </div>
 
+                        {{-- Field Password --}}
                         <div class="mb-3 form-password-toggle">
                             <div class="d-flex justify-content-between">
                                 <label class="form-label" for="password">Password</label>
                             </div>
-                            <div class="input-group input-group-merge">
+                            <div class="input-group input-group-merge @error('password') has-validation @enderror">
                                 <input
                                     type="password"
                                     id="password"
-                                    class="form-control"
+                                    class="form-control @error('password') is-invalid @enderror"
                                     name="password"
                                     placeholder="&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;&#xb7;"
                                     aria-describedby="password"
                                 />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                                
+                                {{-- Pesan Error Password diletakkan di dalam input-group agar border merah menyatu --}}
+                                @error('password')
+                                    <div class="invalid-feedback">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
                             </div>
                         </div>
 
@@ -118,7 +125,7 @@
 
                 </div>
             </div>
-            </div>
+        </div>
     </div>
 </div>
 @endsection

@@ -1,144 +1,108 @@
 @extends('admin.layouts.app')
 
 @section('title', 'Dashboard Admin')
-@section('header', 'Ringkasan Sistem SPK')
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
-    
+    {{-- Widget Atas --}}
     <div class="row">
-        <div class="col-lg-8 mb-4 order-0">
+        <div class="col-lg-8 mb-4">
             <div class="card bg-primary text-white">
                 <div class="d-flex align-items-end row">
                     <div class="col-sm-7">
                         <div class="card-body">
                             <h5 class="card-title text-white">Selamat Datang, {{ auth()->user()->name }}! 🧑‍🌾</h5>
-                            <p class="mb-4">
-                                Hari ini terdapat <span class="fw-bold text-warning">{{ $countBaru ?? 0 }}</span> data CPCL baru. 
-                                Sistem SPK telah meranking <span class="fw-bold text-white">{{ $countRanking ?? 0 }}</span> kelompok tani.
-                            </p>
+                            <p class="mb-4">Sistem SPK telah meranking <span class="fw-bold">{{ $countRanking }}</span> data kelompok tani dengan skor rata-rata <span class="fw-bold">{{ number_format($avgSkor, 2) }}</span>.</p>
                             <a href="{{ route('admin.cpcl.index') }}" class="btn btn-sm btn-dark">Kelola Data CPCL</a>
                         </div>
                     </div>
-                    <div class="col-sm-5 text-center text-sm-left">
-                        <div class="card-body pb-0 px-0 px-md-4 text-end">
-                            <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="140" alt="Illustration">
-                        </div>
+                    <div class="col-sm-5 text-end">
+                        <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="140" class="me-4" alt="Illustration">
                     </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-lg-4 col-md-4 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card h-100 shadow-none border">
                 <div class="card-body">
-                    <span class="d-block mb-1 text-muted small">Konfigurasi Fuzzy Sugeno</span>
-                    <h5 class="card-title mb-3">Model Parameter</h5>
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-secondary small">Total Kriteria</span>
-                        <span class="badge bg-label-primary">{{ $jmlKriteria ?? 0 }}</span>
+                    <span class="d-block mb-1 text-muted small">Metadata Wilayah & Parameter</span>
+                    <h5 class="card-title mb-3">Cakupan Sistem</h5>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="small">Jumlah Kriteria</span>
+                        <span class="badge bg-label-info">{{ $jmlKriteria }}</span>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-secondary small">Himpunan Fuzzy (Sub)</span>
-                        <span class="badge bg-label-info">{{ $jmlSubKriteria ?? 0 }}</span>
+                    <div class="d-flex justify-content-between">
+                        <span class="small">Sub-Kriteria</span>
+                        <span class="badge bg-label-secondary">{{ $jmlSubKriteria }}</span>
                     </div>
-                    <div class="progress mb-2" style="height: 8px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: 100%"></div>
-                    </div>
-                    <small class="text-muted small fst-italic">Status: Sistem Siap Menghitung</small>
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- Statistik Card --}}
     <div class="row">
         @php
             $stats = [
                 ['label' => 'Total CPCL', 'value' => $totalCpcl, 'color' => 'primary', 'icon' => 'bx-spreadsheet'],
-                ['label' => 'Belum Verifikasi', 'value' => $countBaru, 'color' => 'warning', 'icon' => 'bx-time-five'],
+                ['label' => 'Baru', 'value' => $countBaru, 'color' => 'warning', 'icon' => 'bx-time-five'],
                 ['label' => 'Terverifikasi', 'value' => $countTerverifikasi, 'color' => 'success', 'icon' => 'bx-check-shield'],
                 ['label' => 'Ditolak', 'value' => $countDitolak, 'color' => 'danger', 'icon' => 'bx-x-circle'],
             ];
         @endphp
         @foreach($stats as $s)
         <div class="col-md-3 col-6 mb-4">
-            <div class="card border-bottom border-{{ $s['color'] }} border-3 shadow-none">
+            <div class="card border-bottom border-{{ $s['color'] }} border-3 shadow-none text-center h-100">
                 <div class="card-body">
-                    <div class="avatar flex-shrink-0 mb-2">
-                        <span class="badge bg-label-{{ $s['color'] }} p-2"><i class="bx {{ $s['icon'] }} fs-4"></i></span>
-                    </div>
-                    <span class="fw-semibold d-block mb-1 small">{{ $s['label'] }}</span>
-                    <h3 class="card-title mb-0">{{ $s['value'] ?? 0 }}</h3>
+                    <div class="badge bg-label-{{ $s['color'] }} p-2 mb-2"><i class="bx {{ $s['icon'] }} fs-4"></i></div>
+                    <span class="d-block mb-1 small text-muted">{{ $s['label'] }}</span>
+                    <h3 class="card-title mb-0">{{ $s['value'] }}</h3>
                 </div>
             </div>
         </div>
         @endforeach
     </div>
 
+    {{-- Grafik --}}
     <div class="row">
-        <div class="col-12 col-lg-8 mb-4">
+        <div class="col-lg-8 mb-4">
             <div class="card h-100">
-                <div class="card-header pb-0">
-                    <h5 class="m-0">Distribusi CPCL Per Wilayah</h5>
-                    <small class="text-muted">Berdasarkan data lokasi</small>
-                </div>
                 <div class="card-body">
-                    <div id="lokasiChart" style="min-height: 350px;"></div>
+                    <h5 class="card-title">Tren Registrasi CPCL</h5>
+                    <div id="trenChart"></div>
                 </div>
             </div>
         </div>
-
-        <div class="col-12 col-lg-4 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card h-100">
-                <div class="card-header pb-0">
-                    <h5 class="m-0">Total Tiap Bidang</h5>
-                    <small class="text-muted">Sektor Usulan</small>
-                </div>
                 <div class="card-body">
+                    <h5 class="card-title">Rasio Verifikasi</h5>
+                    <div id="statusChart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Sebaran Per Kecamatan (Top 10)</h5>
+                    <div id="lokasiChart"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5 mb-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Bidang Usulan</h5>
                     <div id="bidangChart"></div>
-                    <div class="mt-4">
-                        @foreach($bidangLabels as $index => $label)
-                        <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-1">
-                            <span class="small text-muted">{{ $label }}</span>
-                            <span class="fw-bold small">{{ $bidangData[$index] }}</span>
-                        </div>
-                        @endforeach
-                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex align-items-center justify-content-between">
-                    <h5 class="card-title m-0"><i class="bx bx-trophy text-warning me-2"></i>Top 5 Skor Kelayakan</h5>
-                    <a href="{{ route('admin.perhitungan.index') }}" class="btn btn-xs btn-outline-primary">Lihat Semua</a>
-                </div>
-                <div class="table-responsive text-nowrap">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Ranking</th>
-                                <th>Kelompok Tani</th>
-                                <th>Wilayah</th>
-                                <th class="text-center">Skor Kelayakan</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($topRank as $rank)
-                            <tr>
-                                <td><span class="badge bg-label-primary">#{{ $rank->ranking }}</span></td>
-                                <td><strong>{{ $rank->cpcl->nama_kelompok }}</strong></td>
-                                <td>{{ $rank->cpcl->lokasi }}</td>
-                                <td class="text-center fw-bold text-primary">{{ number_format($rank->skor_akhir, 2) }}%</td>
-                            </tr>
-                            @empty
-                            <tr><td colspan="4" class="text-center py-4">Belum ada data ranking.</td></tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                <div class="card-body">
+                    <h5 class="card-title">Top 5 Kelompok Tani Berdasarkan Skor Kelayakan</h5>
+                    <div id="topSkorChart"></div>
                 </div>
             </div>
         </div>
@@ -147,55 +111,87 @@
 @endsection
 
 @push('scripts')
-
-
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        setTimeout(() => {
-            // --- 1. CHART LOKASI (BAR) ---
-            const lokasiChartEl = document.querySelector('#lokasiChart');
-            const lokasiLabels = @json($lokasiLabels);
-            const lokasiData = @json($lokasiData);
+document.addEventListener('DOMContentLoaded', function () {
+    const themeColors = ['#696cff', '#03c3ec', '#71dd37', '#ff3e1d', '#ffab00', '#8592a3'];
 
-            if (lokasiChartEl && lokasiLabels.length > 0) {
-                const lokasiOptions = {
-                    chart: { type: 'bar', height: 350, toolbar: { show: false } },
-                    series: [{ name: 'Kelompok Tani', data: lokasiData }],
-                    xaxis: { categories: lokasiLabels },
-                    plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%' } },
-                    colors: ['#696cff'],
-                    dataLabels: { enabled: true }
-                };
-                new ApexCharts(lokasiChartEl, lokasiOptions).render();
+    // 1. Tren Chart (Line)
+    new ApexCharts(document.querySelector("#trenChart"), {
+        chart: { height: 300, type: 'area', toolbar: { show: false } },
+        dataLabels: { enabled: false },
+        series: [{ name: 'Registrasi', data: @json($trenData) }],
+        xaxis: { categories: @json($trenLabels) },
+        colors: [themeColors[0]],
+        stroke: { curve: 'smooth' }
+    }).render();
+
+    // 2. Status Chart (Polar Area)
+    
+new ApexCharts(document.querySelector("#statusChart"), {
+    chart: { 
+        height: 320, 
+        type: 'polarArea' 
+    },
+    labels: @json($statusLabels),
+    series: @json($statusData),
+    colors: ['#ffab00', '#71dd37', '#ff3e1d'],
+    legend: { 
+        position: 'bottom' 
+    },
+
+    yaxis: {
+        show: false, // Menyembunyikan angka desimal yang berantakan di tengah grafik
+    },
+    plotOptions: {
+        polarArea: {
+            rings: {
+                strokeWidth: 0
+            },
+            spokes: {
+                strokeWidth: 0
             }
-
-            // --- 2. CHART BIDANG (DONUT) ---
-            const bidangChartEl = document.querySelector('#bidangChart');
-            const bidangLabels = @json($bidangLabels);
-            const bidangData = @json($bidangData);
-
-            if (bidangChartEl && bidangLabels.length > 0) {
-                const bidangOptions = {
-                    chart: { type: 'donut', height: 250 },
-                    labels: bidangLabels,
-                    series: bidangData,
-                    colors: ['#696cff', '#03c3ec', '#71dd37', '#ff3e1d', '#ffab00'],
-                    legend: { show: false },
-                    plotOptions: { 
-                        pie: { 
-                            donut: { 
-                                size: '70%',
-                                labels: { 
-                                    show: true, 
-                                    total: { show: true, label: 'Total', formatter: () => {{ $totalCpcl }} } 
-                                } 
-                            } 
-                        } 
-                    }
-                };
-                new ApexCharts(bidangChartEl, bidangOptions).render();
+        }
+    },
+    tooltip: {
+        y: {
+            formatter: function(val) {
+                return val + " Data" // Memastikan tooltip tetap rapi
             }
-        }, 800);
-    });
+        }
+    }
+    // -------------------------------------
+}).render();
+
+    // 3. Lokasi Chart (Horizontal Bar)
+    new ApexCharts(document.querySelector("#lokasiChart"), {
+        chart: { height: 350, type: 'bar' },
+        plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+        series: [{ name: 'Total CPCL', data: @json($lokasiData) }],
+        xaxis: { categories: @json($lokasiLabels) },
+        colors: [themeColors[1]]
+    }).render();
+
+    // 4. Bidang Chart (Donut)
+    new ApexCharts(document.querySelector("#bidangChart"), {
+        chart: { height: 350, type: 'donut' },
+        labels: @json($bidangLabels),
+        series: @json($bidangData),
+        colors: themeColors,
+        legend: { position: 'bottom' }
+    }).render();
+
+    // 5. Top Skor Chart (Bar)
+    new ApexCharts(document.querySelector("#topSkorChart"), {
+        chart: { height: 300, type: 'bar' },
+        plotOptions: { bar: { borderRadius: 10, columnWidth: '40%', distributed: true } },
+        series: [{ name: 'Skor Akhir', data: @json($topSkorData) }],
+        xaxis: { categories: @json($topSkorLabels) },
+        colors: themeColors,
+        dataLabels: { 
+            enabled: true, 
+            formatter: (v) => v.toFixed(3) 
+        }
+    }).render();
+});
 </script>
 @endpush

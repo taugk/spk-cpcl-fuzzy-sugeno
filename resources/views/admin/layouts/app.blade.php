@@ -210,6 +210,43 @@
                 loader.classList.add("loader-hidden");
             }
         });
+    
+        // F. GLOBAL SWEETALERT UNTUK NOTIFIKASI SESSION DARI CONTROLLER
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: '{{ session('success') }}',
+                timer: 3000,
+                showConfirmButton: false,
+                backdrop: true
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: '{{ session('error') }}',
+                backdrop: true
+            });
+        @endif
+
+        // Tambahan: Global SweetAlert untuk error validasi ($errors)
+        @if($errors->any())
+            Swal.fire({
+                icon: 'error',
+                title: 'Validasi Gagal!',
+                html: `
+                    <ul class="text-start mb-0">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                `,
+                backdrop: true
+            });
+        @endif
     });
     </script>
 

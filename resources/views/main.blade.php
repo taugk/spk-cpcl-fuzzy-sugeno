@@ -17,7 +17,7 @@
         />
 
         <title>
-            Login Basic - Pages | Sneat - Bootstrap 5 HTML Admin Template - Pro
+            @yield('title') | SPK CPCL Dinas Pertanian
         </title>
 
         <meta name="description" content="" />

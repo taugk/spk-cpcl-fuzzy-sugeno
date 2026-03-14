@@ -37,6 +37,7 @@
         </a>
         <ul class="menu-sub">
           <li class="menu-item {{ request()->routeIs('admin.cpcl.index') ? 'active' : '' }}"><a href="{{ route('admin.cpcl.index') }}" class="menu-link"><div>Semua Data</div></a></li>
+          <li class="menu-item {{ request()->routeIs('admin.cpcl.belum-verifikasi') ? 'active' : '' }}"><a href="{{ route('admin.cpcl.belum-verifikasi') }}" class="menu-link"><div>Belum Verifikasi</div></a></li>
           <li class="menu-item {{ request()->routeIs('admin.cpcl.verifikasi') ? 'active' : '' }}"><a href="{{ route('admin.cpcl.verifikasi') }}" class="menu-link"><div>Terverifikasi</div></a></li>
         </ul>
       </li>

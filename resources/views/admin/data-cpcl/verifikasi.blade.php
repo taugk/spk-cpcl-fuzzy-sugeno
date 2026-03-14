@@ -214,10 +214,19 @@
                             </div>
                         </div>
                         <div class="px-4 pb-4">
-                            <div class="data-item bg-light">
-                                <span class="data-label">Lokasi / Alamat Detail</span>
-                                <div class="data-value fw-normal small text-muted">
-                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i> {{ $cpcl->lokasi }}
+                            <div class="data-item bg-light p-3 rounded">
+                                <span class="data-label d-block fw-semibold mb-1">Lokasi / Alamat Detail</span>
+                                <div class="data-value fw-normal small text-muted lh-base">
+                                    <i class="bi bi-geo-alt-fill text-danger me-1"></i>
+                                    {{-- Menampilkan detail jalan / blok (dari textarea lokasi) --}}
+                                    <span class="text-dark fw-medium">{{ $cpcl->lokasi ?? 'Detail alamat belum diatur' }}</span>
+                                    <br>
+                                    {{-- Menampilkan urutan wilayah administratif di baris bawahnya --}}
+                                    <span style="margin-left: 1.35rem; display: inline-block; margin-top: 2px;">
+                                        Desa {{ $cpcl->alamat->desa ?? '-' }}, 
+                                        Kecamatan {{ $cpcl->alamat->kecamatan ?? '-' }}, 
+                                        {{ ucwords(strtolower($cpcl->alamat->kabupaten ?? 'Kabupaten Kuningan')) }}
+                                    </span>
                                 </div>
                             </div>
                         </div>

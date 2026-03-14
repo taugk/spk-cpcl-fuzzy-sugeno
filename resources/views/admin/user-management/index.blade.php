@@ -5,32 +5,17 @@
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
     
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+    {{-- Alert Bootstrap dihapus karena sudah dicover Global SweetAlert di app.blade --}}
 
     <div class="card">
-      
       <div class="card-header border-bottom d-flex flex-column flex-md-row align-items-center justify-content-between">
         <h5 class="card-title mb-3 mb-md-0">Data Pengguna</h5>
         
         <div class="d-flex gap-2">
-          
           <a href="{{ route('admin.user-management.create') }}" class="btn btn-primary">
             <i class="bx bx-plus me-1"></i> 
             <span class="d-none d-sm-inline-block">Tambah User</span>
           </a>
-
         </div>
       </div>
 
@@ -71,19 +56,15 @@
               <td>{{ $user->username }}</td>
 
               <td>
-                @if($user->role == 'admin')
-                    <span class="badge bg-label-primary">ADMIN</span>
-                @else
-                    <span class="badge bg-label-info">UPTD</span>
-                @endif
+                <span class="badge {{ $user->role == 'admin' ? 'bg-label-primary' : 'bg-label-info' }}">
+                    {{ strtoupper($user->role) }}
+                </span>
               </td>
 
               <td>
-                @if($user->status == 'aktif')
-                    <span class="badge bg-label-success">Aktif</span>
-                @else
-                    <span class="badge bg-label-secondary">Nonaktif</span>
-                @endif
+                <span class="badge {{ $user->status == 'aktif' ? 'bg-label-success' : 'bg-label-secondary' }}">
+                    {{ ucfirst($user->status) }}
+                </span>
               </td>
 
               <td>
@@ -98,10 +79,11 @@
                         <i class="bx bx-edit-alt fs-5"></i>
                     </a>
 
-                    <form action="{{ route('admin.user-management.destroy', $user->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus user ini?');">
+                    {{-- MODIFIKASI FORM HAPUS UNTUK GLOBAL SCRIPT --}}
+                    <form action="{{ route('admin.user-management.destroy', $user->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="btn btn-icon btn-text-danger p-0" title="Hapus" style="background:none; border:none;">
+                        <button type="button" class="btn btn-icon btn-text-danger p-0 btn-delete-confirm" title="Hapus" style="background:none; border:none;">
                             <i class="bx bx-trash fs-5"></i>
                         </button>
                     </form>
@@ -121,10 +103,8 @@
       </div>
 
       <div class="card-footer d-flex justify-content-end">
-         {{ $users->links() }} 
-         {{-- Jika tampilan pagination berantakan, gunakan: {{ $users->links('pagination::bootstrap-5') }} --}}
+          {{ $users->links() }} 
       </div>
-
     </div>
   </div>
 @endsection

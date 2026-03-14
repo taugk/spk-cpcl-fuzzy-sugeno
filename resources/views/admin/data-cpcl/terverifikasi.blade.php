@@ -29,52 +29,48 @@
                 </div>
             </div>
 
-            {{-- FILTER SECTION AKTIF --}}
+            {{-- FILTER SECTION --}}
             <div class="card-body mt-3">
-                <form action="{{ route('admin.cpcl.verifikasi') }}" method="GET" class="row g-3">
+                {{-- Menggunakan url()->current() agar filter bekerja dinamis di halaman mana pun form ini ditaruh --}}
+                <form action="{{ url()->current() }}" method="GET" class="row g-3">
+                    
+                    {{-- DROPDOWN KECAMATAN DARI API --}}
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Kecamatan</label>
-                        <select name="kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
-                            <option value="">Semua Kecamatan</option>
-                            @php
-                                $kecamatans = [
-                                    'Ciawigebang', 'Ciawilor', 'Cidahu', 'Cigandamekar', 'Cigugur', 'Cilebak', 'Cilimus', 'Cimahi', 
-                                    'Ciniru', 'Cipicung', 'Ciwaru', 'Darma', 'Garawangi', 'Hantara', 'Jalaksana', 'Japara', 
-                                    'Kadugede', 'Kalimanggis', 'Karangkancana', 'Kramatmulya', 'Kuningan', 'Luragung', 'Maleber', 
-                                    'Mandirancan', 'Nusaherang', 'Pancalang', 'Pasawahan', 'Lebakwangi', 'Selajambe', 'Sindangagung', 'Subang'
-                                ];
-                                sort($kecamatans);
-                            @endphp
-                            @foreach($kecamatans as $kec)
-                                <option value="{{ $kec }}" {{ request('kecamatan') == $kec ? 'selected' : '' }}>{{ $kec }}</option>
-                            @endforeach
+                        <select name="kecamatan" id="filter-kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="">Sedang memuat...</option>
+                            {{-- Option akan dirender melalui JavaScript API --}}
                         </select>
                     </div>
+                    
+                    {{-- DROPDOWN RENCANA USAHA (DINAMIS DARI CONTROLLER) --}}
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Rencana Usaha</label>
                         <select name="rencana_usaha" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">Semua Usulan</option>
                             @php
-                                $usulans = [
-                                    'Pengembangan Benih' => 'Pengembangan Benih/Bibit',
-                                    'Penyediaan Pupuk' => 'Penyediaan Pupuk',
-                                    'Pengadaan Alsintan' => 'Pengadaan Alsintan',
-                                    'Rehabilitasi Jaringan Irigasi' => 'Rehabilitasi Jaringan Irigasi',
-                                    'Peningkatan Produksi' => 'Peningkatan Produksi/Budidaya'
-                                ];
+                                $usulans = \App\Models\Cpcl::select('rencana_usaha')
+                                                ->whereNotNull('rencana_usaha')
+                                                ->distinct()
+                                                ->orderBy('rencana_usaha', 'asc')
+                                                ->pluck('rencana_usaha');
                             @endphp
-                            @foreach($usulans as $val => $label)
-                                <option value="{{ $val }}" {{ request('rencana_usaha') == $val ? 'selected' : '' }}>{{ $label }}</option>
+                            @foreach($usulans as $usulan)
+                                <option value="{{ $usulan }}" {{ request('rencana_usaha') == $usulan ? 'selected' : '' }}>
+                                    {{ $usulan }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
+                    
                     <div class="col-md-6 d-flex align-items-end justify-content-md-end">
                         <div class="input-group input-group-sm w-75">
                             <span class="input-group-text"><i class="bx bx-search"></i></span>
                             <input type="text" name="search" class="form-control" placeholder="Cari Poktan / NIK Ketua..." value="{{ request('search') }}">
                             <button class="btn btn-primary" type="submit">Cari</button>
+                            
                             @if(request()->anyFilled(['kecamatan', 'rencana_usaha', 'search']))
-                                <a href="{{ route('admin.cpcl.verifikasi') }}" class="btn btn-outline-danger" title="Reset Filter">
+                                <a href="{{ url()->current() }}" class="btn btn-outline-danger" title="Reset Filter">
                                     <i class="bx bx-x"></i>
                                 </a>
                             @endif
@@ -112,10 +108,25 @@
                             </td>
 
                             <td>
-                                <span class="badge bg-label-secondary mb-1 text-wrap" style="max-width: 150px;">{{ $row->lokasi }}</span><br>
-                                <a href="https://www.google.com/maps?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-primary small">
-                                    <i class="bx bx-map-pin me-1"></i> Lihat Peta
-                                </a>
+                                {{-- Menampilkan informasi Desa, Kecamatan, dan Jalan/Blok dari relasi Alamat --}}
+                                <div class="d-flex flex-column gap-1">
+                                    <span class="badge bg-label-secondary text-wrap text-start" style="max-width: 150px; line-height: 1.4;">
+                                        @if(isset($row->alamat->desa) || isset($row->alamat->kecamatan))
+                                        <small class="text-muted" style="font-size: 0.75rem;">
+                                            <i class="bx bx-map text-primary"></i> 
+                                            {{ $row->alamat->desa ?? '-' }}, {{ $row->alamat->kecamatan ?? '-' }}
+                                        </small>
+                                    @endif
+                                    </span>
+                                    
+                                    
+
+                                    @if(isset($row->latitude) && isset($row->longitude))
+                                        <a href="https://www.google.com/maps?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-primary small mt-1" style="width: max-content;">
+                                            <i class="bx bx-map-pin me-1"></i> Lihat Peta
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
 
                             <td>
@@ -166,39 +177,38 @@
                             </td>
 
                             <td class="text-center">
-    <div class="d-flex justify-content-center gap-1">
-        {{-- 1. Tombol Verifikasi (Ikon Shield/Check) --}}
-        @if(strtolower($row->status) == 'baru')
-            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-primary" title="Verifikasi Data">
-                <i class="bx bx-check-shield"></i>
-            </a>
-        @else
-            {{-- Jika sudah diverifikasi, tampilkan tombol periksa hasil --}}
-            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-outline-secondary" title="Lihat Hasil Verifikasi">
-                <i class="bx bx-search-alt"></i>
-            </a>
-        @endif
+                                <div class="d-flex justify-content-center gap-1">
+                                    {{-- 1. Tombol Verifikasi (Ikon Shield/Check) --}}
+                                    @if(strtolower($row->status) == 'baru')
+                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-primary" title="Verifikasi Data">
+                                            <i class="bx bx-check-shield"></i>
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-outline-secondary" title="Lihat Hasil Verifikasi">
+                                            <i class="bx bx-search-alt"></i>
+                                        </a>
+                                    @endif
 
-        {{-- 2. Tombol Detail --}}
-        <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
-            <i class="bx bx-show"></i>
-        </a>
+                                    {{-- 2. Tombol Detail --}}
+                                    <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
+                                        <i class="bx bx-show"></i>
+                                    </a>
 
-        {{-- 3. Tombol Edit --}}
-        <a href="{{ route('admin.cpcl.edit', $row->id) }}" class="btn btn-icon btn-sm btn-label-warning" title="Edit Data">
-            <i class="bx bx-edit-alt"></i>
-        </a>
+                                    {{-- 3. Tombol Edit --}}
+                                    <a href="{{ route('admin.cpcl.edit', $row->id) }}" class="btn btn-icon btn-sm btn-label-warning" title="Edit Data">
+                                        <i class="bx bx-edit-alt"></i>
+                                    </a>
 
-        {{-- 4. Tombol Hapus --}}
-        <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" id="delete-form-{{ $row->id }}" class="d-inline">
-            @csrf
-            @method('DELETE')
-            <button type="button" class="btn btn-icon btn-sm btn-label-danger" title="Hapus Data" onclick="confirmDelete('{{ $row->id }}')">
-                <i class="bx bx-trash"></i>
-            </button>
-        </form>
-    </div>
-</td>
+                                    {{-- 4. Tombol Hapus Terhubung dengan Global SweetAlert --}}
+                                    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm" title="Hapus Data">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -246,6 +256,7 @@
 
 @push('scripts')
 <script>
+    // FUNGSI PREVIEW FILE
     function previewFile(url, title) {
         const previewContent = document.getElementById('previewContent');
         const modalTitle = document.getElementById('modalTitle');
@@ -285,10 +296,39 @@
         previewModal.show();
     }
 
-    function confirmDelete(id) {
-        if(confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-            document.getElementById('delete-form-' + id).submit();
-        }
-    }
+    // FUNGSI FETCH API WILAYAH UNTUK FILTER KECAMATAN
+    document.addEventListener('DOMContentLoaded', function(){
+        const kabId = '32.08'; // Kode Kabupaten Kuningan
+        const filterKecamatan = document.getElementById('filter-kecamatan');
+        
+        // Menangkap filter kecamatan yang sedang aktif dari URL
+        const currentKecamatan = "{{ request('kecamatan') }}";
+
+        fetch(`/proxy-wilayah/districts/${kabId}`)
+            .then(res => res.json())
+            .then(data => {
+                // Set ulang opsi default
+                filterKecamatan.innerHTML = '<option value="">Semua Kecamatan</option>';
+
+                data.data.forEach(item => {
+                    const opt = document.createElement('option');
+                    
+                    // Gunakan nama kecamatan sebagai value
+                    opt.value = item.name;
+                    opt.text = item.name;
+
+                    // Set status selected jika cocok dengan filter di URL
+                    if(item.name === currentKecamatan) {
+                        opt.selected = true;
+                    }
+
+                    filterKecamatan.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error('Gagal mengambil data kecamatan:', err);
+                filterKecamatan.innerHTML = '<option value="">Gagal memuat wilayah</option>';
+            });
+    });
 </script>
 @endpush
