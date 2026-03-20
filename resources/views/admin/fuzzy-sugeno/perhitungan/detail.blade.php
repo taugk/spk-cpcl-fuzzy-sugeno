@@ -6,7 +6,7 @@
 <div class="content-wrapper">
     <div class="container-xxl container-p-y">
 
-        {{-- HEADER --}}
+        {{-- HEADER LAPORAN --}}
         <div class="card mb-4 border-0 shadow-sm no-print">
             <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
@@ -15,22 +15,14 @@
                         Laporan Analisis Kelayakan Fuzzy Sugeno
                     </h4>
                     <p class="text-muted mb-0">
-                        Subjek:
-                        <span class="badge bg-label-primary fs-6">
-                            {{ $hasil['cpcl']->nama_kelompok }}
-                        </span>
-
-                        <span class="badge bg-label-info ms-2">
-                            {{ $hasil['cpcl']->bidang ?? '-' }}
-                        </span>
+                        Subjek: <span class="badge bg-label-primary fs-6">{{ $hasil['cpcl']->nama_kelompok }}</span>
+                        <span class="badge bg-label-info ms-2">{{ $hasil['cpcl']->bidang ?? '-' }}</span>
                     </p>
                 </div>
-
                 <div class="d-flex gap-2">
                     <a href="{{ route('admin.perhitungan.index') }}" class="btn btn-outline-secondary">
                         <i class="bx bx-arrow-back me-1"></i> Kembali
                     </a>
-
                     <button onclick="window.print()" class="btn btn-primary">
                         <i class="bx bx-printer me-1"></i> Cetak Laporan
                     </button>
@@ -38,437 +30,257 @@
             </div>
         </div>
 
-
-        {{-- ================================================================ --}}
-        {{-- STEP 1: FUZZIFIKASI --}}
-        {{-- ================================================================ --}}
+        {{-- STEP 1: FUZZIFIKASI & GRAFIK --}}
         <div class="card shadow-sm border-0 mb-4">
-
             <div class="card-header bg-white border-bottom py-3">
                 <h5 class="fw-bold mb-0">
                     <span class="badge bg-primary me-2">Step 1</span>
-                    Fuzzifikasi — Derajat Keanggotaan ($\mu$)
+                    Fuzzifikasi — Visualisasi Kurva & Derajat Keanggotaan ($\mu$)
                 </h5>
-
-                <small class="text-muted d-block mt-2">
-                    Menampilkan nilai riil input dan konversinya ke derajat keanggotaan fuzzy.
-                </small>
             </div>
-
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle mb-0">
-
-                    <thead class="table-light text-center">
-                        <tr class="text-uppercase small fw-bold">
-                            <th style="width:25%">Kriteria & Nilai Riil</th>
-                            <th>Himpunan Fuzzy & Analisis Derajat Keanggotaan</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-
-                    @forelse($hasil['fuzzifikasi'] as $k)
-
-                    <tr>
-
-                        {{-- NILAI RIIL --}}
-                        <td class="bg-light">
-
-                            <div class="px-3">
-
-                                <span class="fw-bold d-block text-primary fs-6">
-                                    {{ $k['kode'] }}
-                                </span>
-
-                                <small class="text-dark d-block mb-2 fw-bold">
-                                    {{ $k['nama'] }}
-                                </small>
-
-                                <div class="p-3 rounded bg-white border border-primary-subtle shadow-sm">
-
-                                    <small class="text-muted d-block mb-1 text-uppercase"
-                                           style="font-size:0.65rem;font-weight:800;">
-                                        Nilai Riil Input
-                                    </small>
-
-                                    <div class="d-flex align-items-center">
-
-                                        <h4 class="fw-bold mb-0 text-dark me-2">
-                                            {{ $k['input'] }}
-                                        </h4>
-
-                                        @if($k['kode']=='C1')
-                                            <span class="text-muted small">Ha</span>
-                                        @elseif($k['kode']=='C3')
-                                            <span class="text-muted small">Thn</span>
-                                        @elseif($k['kode']=='C4')
-                                            <span class="text-muted small">Ton/Ha</span>
-                                        @endif
-
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle mb-0">
+                        <thead class="table-light text-center small fw-bold text-uppercase">
+                            <tr>
+                                <th style="width:30%">Kriteria & Visualisasi</th>
+                                <th>Analisis Himpunan Aktif</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($hasil['fuzzifikasi'] as $k)
+                            <tr>
+                                {{-- KOLOM GRAFIK --}}
+                                <td class="p-3 bg-light">
+                                    <div class="text-center mb-2">
+                                        <span class="fw-bold text-primary d-block">{{ $k['kode'] }} - {{ $k['nama'] }}</span>
+                                        <small class="text-muted">Input: <strong>{{ $k['input'] }}</strong></small>
                                     </div>
-
-                                </div>
-
-                            </div>
-
-                        </td>
-
-
-                        {{-- HIMPUNAN --}}
-                        <td class="p-3">
-
-                            <div class="row g-3">
-
-                            @forelse($k['himpunan'] as $s)
-
-                            <div class="col-12 col-md-6">
-
-                                <div class="p-3 rounded border border-success border-2 bg-label-success shadow-sm">
-
-                                    <div class="d-flex justify-content-between align-items-center">
-
-                                        <div>
-
-                                            <span class="fw-bold text-uppercase small d-block mb-1">
-                                                {{ $s['nama'] }}
-                                            </span>
-
-                                            <div class="small text-success">
-                                                <i class="bx bx-check-circle me-1"></i>
-                                                <strong>Aktif</strong>
+                                    <div style="height: 180px; width: 100%;">
+                                        <canvas id="chart-{{ $k['kode'] }}"></canvas>
+                                    </div>
+                                </td>
+                                {{-- KOLOM DATA --}}
+                                <td class="p-3">
+                                    <div class="row g-2">
+                                        @forelse($k['himpunan'] as $s)
+                                        <div class="col-md-6">
+                                            <div class="p-3 rounded border border-success bg-label-success shadow-sm">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <small class="fw-bold d-block text-uppercase">{{ $s['nama'] }}</small>
+                                                        <span class="small">Tipe: {{ ucfirst(str_replace('_', ' ', $s['params']['tipe'])) }}</span>
+                                                    </div>
+                                                    <div class="text-end">
+                                                        <span class="badge bg-success fs-6">$\mu$ = {{ number_format($s['mu'], 4) }}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-
                                         </div>
-
-                                        <div class="text-end">
-
-                                            <span class="badge bg-success fs-5">
-                                                $\mu$ = {{ number_format($s['mu'],4) }}
-                                            </span>
-
-                                            <div class="mt-1 small text-muted">
-                                                Konsekuen: $k$ = {{ number_format($s['k'],2) }}
-                                            </div>
-
+                                        @empty
+                                        <div class="col-12 text-center py-3">
+                                            <span class="text-danger italic">Tidak ada himpunan fuzzy yang aktif ($\mu = 0$)</span>
                                         </div>
-
+                                        @endforelse
                                     </div>
-
-                                </div>
-
-                            </div>
-
-                            @empty
-
-                            <div class="col-12">
-
-                                <div class="alert alert-danger d-flex align-items-center mb-0">
-
-                                    <i class="bx bx-error-circle me-2 fs-4"></i>
-
-                                    <div>
-                                        <strong>Tidak Aktif:</strong>
-                                        Nilai input tidak sesuai range ($\mu = 0$)
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-                            @endforelse
-
-                            </div>
-
-                        </td>
-
-                    </tr>
-
-                    @empty
-                        <tr>
-                            <td colspan="2" class="text-center py-4">
-                                Data tidak tersedia
-                            </td>
-                        </tr>
-                    @endforelse
-
-                    </tbody>
-
-                </table>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
-
-        {{-- ================================================================ --}}
         {{-- STEP 2 & 3: RULE BASE --}}
-        {{-- ================================================================ --}}
         <div class="card shadow-sm border-0 mb-4">
-
             <div class="card-header bg-white border-bottom py-3">
-
-                <h5 class="fw-bold mb-0">
-                    <span class="badge bg-warning text-dark me-2">Step 2 & 3</span>
-                    Rule Base & Firing Strength
-                </h5>
-
+                <h5 class="fw-bold mb-0"><span class="badge bg-warning text-dark me-2">Step 2 & 3</span> Rule Base & Firing Strength</h5>
             </div>
-
             <div class="table-responsive">
-
                 <table class="table table-bordered align-middle mb-0">
-
                     <thead class="table-light text-center small fw-bold">
                         <tr>
-                            <th>Rule</th>
-                            <th>Anteceden (IF)</th>
-                            <th>$\alpha$</th>
-                            <th>$z$</th>
-                            <th>$\alpha \times z$</th>
+                            <th>Rule</th><th>Anteceden (IF)</th><th>$\alpha$ (Min)</th><th>$z$ (Konsekuen)</th><th>$\alpha \times z$</th>
                         </tr>
                     </thead>
-
                     <tbody>
-
-                    @foreach($hasil['rules'] as $rule)
-
-                    <tr class="text-center">
-
-                        <td class="fw-bold text-primary">
-                            {{ $rule['rule_id'] }}
-                        </td>
-
-                        <td class="text-start">
-
-                        @foreach($rule['anteceden'] as $i=>$ant)
-
-                            @if($i>0)
-                                <span class="badge bg-label-dark small mx-1">AND</span>
-                            @endif
-
-                            <span class="badge bg-label-primary px-2">
-                                {{ $ant['kriteria'] }} = {{ $ant['himpunan'] }}
-                            </span>
-
-                        @endforeach
-
-                        </td>
-
-                        <td>
-                            <span class="badge bg-success">
-                                {{ number_format($rule['alpha'],4) }}
-                            </span>
-                        </td>
-
-                        <td>
-                            {{ number_format($rule['z_rule'],4) }}
-                        </td>
-
-                        <td class="fw-bold text-primary">
-                            {{ number_format($rule['alpha_x_z'],4) }}
-                        </td>
-
-                    </tr>
-
-                    @endforeach
-
-                    </tbody>
-
-                    <tfoot class="table-light fw-bold text-center">
-
-                        <tr>
-
-                            <td colspan="2" class="text-end">
-                                Jumlah ($\Sigma$):
+                        @foreach($hasil['rules'] as $rule)
+                        <tr class="text-center">
+                            <td class="fw-bold text-primary">{{ $rule['rule_id'] }}</td>
+                            <td class="text-start">
+                                @foreach($rule['anteceden'] as $i => $ant)
+                                    @if($i > 0) <span class="badge bg-label-dark small">AND</span> @endif
+                                    <span class="badge bg-label-primary">{{ $ant['kriteria'] }} = {{ $ant['himpunan'] }}</span>
+                                @endforeach
                             </td>
-
-                            <td class="text-success">
-                                {{ number_format($hasil['sum_alpha'],4) }}
-                            </td>
-
-                            <td></td>
-
-                            <td class="text-primary">
-                                {{ number_format($hasil['sum_alpha_z'],4) }}
-                            </td>
-
+                            <td><span class="badge bg-success">{{ number_format($rule['alpha'], 4) }}</span></td>
+                            <td>{{ number_format($rule['z_rule'], 2) }}</td>
+                            <td class="fw-bold text-primary">{{ number_format($rule['alpha_x_z'], 4) }}</td>
                         </tr>
-
+                        @endforeach
+                    </tbody>
+                    <tfoot class="table-light fw-bold text-center">
+                        <tr>
+                            <td colspan="2" class="text-end text-uppercase">Total ($\Sigma$):</td>
+                            <td class="text-success">{{ number_format($hasil['sum_alpha'], 4) }}</td>
+                            <td></td>
+                            <td class="text-primary">{{ number_format($hasil['sum_alpha_z'], 4) }}</td>
+                        </tr>
                     </tfoot>
-
                 </table>
-
             </div>
-
         </div>
 
-
-        {{-- ================================================================ --}}
-        {{-- STEP 4: DEFUZZIFIKASI --}}
-        {{-- ================================================================ --}}
-        <div class="card shadow-sm border-0 mb-4">
-
-            <div class="card-header bg-white border-bottom py-3">
-
-                <h5 class="fw-bold mb-0">
-                    <span class="badge bg-danger me-2">Step 4</span>
-                    Defuzzifikasi — Hasil Akhir
-                </h5>
-
-            </div>
-
-            <div class="card-body">
-
-                <div class="row g-4">
-
-                    <div class="col-md-5">
-
-                        <div class="p-4 bg-light rounded border text-center">
-
-                            <h6 class="text-uppercase fw-bold mb-3 small">
-                                Formula Weighted Average
-                            </h6>
-
-                            <div class="fs-5">
-
-$$
-z^* =
-\frac{\sum (\alpha_i z_i)}
-{\sum \alpha_i}
-=
-\frac{ {{ number_format($hasil['sum_alpha_z'],4) }} }
-{ {{ number_format($hasil['sum_alpha'],4) }} }
-$$
-
-                            </div>
-
-                            <hr>
-
-                            <h4 class="fw-bold text-success mb-0">
-
-$$
-z^* = {{ number_format($hasil['z'],4) }}
-$$
-
-                            </h4>
-
+        {{-- STEP 4: HASIL AKHIR --}}
+        <div class="card shadow-sm border-0 mb-4 border-top border-primary border-3">
+            <div class="card-body py-4">
+                <div class="row align-items-center">
+                    <div class="col-md-5 text-center border-end">
+                        <h6 class="text-uppercase fw-bold text-muted small">Defuzzifikasi (Sugeno)</h6>
+                        <div class="py-2">
+                            $$z^* = \frac{\sum (\alpha_i \cdot z_i)}{\sum \alpha_i} = \frac{ {{ number_format($hasil['sum_alpha_z'], 4) }} }{ {{ number_format($hasil['sum_alpha'], 4) }} }$$
+                            <h3 class="fw-bold text-primary mt-2">z = {{ number_format($hasil['z'], 4) }}</h3>
                         </div>
-
                     </div>
-
-
-                    <div class="col-md-7">
-
-                        <div class="p-3 border rounded border-2
-                            {{ $hasil['status_kelayakan']=='Layak'
-                                ? 'border-success bg-label-success'
-                                : 'border-danger bg-label-danger' }}">
-
-                            <div class="d-flex justify-content-between align-items-center">
-
+                    <div class="col-md-7 ps-md-5">
+                        <div class="p-4 rounded-3 {{ $hasil['status_kelayakan'] == 'Layak' ? 'bg-label-success border border-success' : 'bg-label-danger border border-danger' }}">
+                            <div class="d-flex justify-content-between align-items-start">
                                 <div>
-
-                                    <small class="fw-bold text-muted d-block mb-1">
-                                        KESIMPULAN ANALISIS
-                                    </small>
-
-                                    <h3 class="fw-bold mb-1
-                                        {{ $hasil['status_kelayakan']=='Layak'
-                                            ? 'text-success'
-                                            : 'text-danger' }}">
-
+                                    <h5 class="fw-bold mb-1 {{ $hasil['status_kelayakan'] == 'Layak' ? 'text-success' : 'text-danger' }}">
                                         {{ $hasil['skala_prioritas'] }}
-
-                                    </h3>
-
-                                    <p class="mb-0 italic">
-                                        {{ $hasil['interpretasi'] }}
-                                    </p>
-
+                                    </h5>
+                                    <p class="mb-0 text-dark italic">{{ $hasil['interpretasi'] }}</p>
                                 </div>
-
-                                <div class="text-center">
-
-                                    <div class="display-6 fw-bold mb-0">
-                                        {{ number_format($hasil['skor_akhir'],2) }}%
-                                    </div>
-
-                                    <small class="fw-bold text-uppercase">
-                                        Skor Kelayakan
-                                    </small>
-
+                                <div class="text-end">
+                                    <div class="display-5 fw-bold mb-0">{{ number_format($hasil['skor_akhir'], 2) }}%</div>
+                                    <small class="fw-bold text-uppercase">Skor Kelayakan</small>
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
 
     </div>
 </div>
 
-
 <style>
-
-mjx-container{
-    margin:10px 0 !important;
-}
-
-.bg-label-success{
-    background:#e8fadf!important;
-    color:#71dd37!important;
-}
-
-.bg-label-primary{
-    background:#e7e7ff!important;
-    color:#696cff!important;
-}
-
-.italic{
-    font-style:italic;
-}
-
-@media print{
-
-.no-print,.btn,.layout-navbar,.layout-menu{
-display:none!important;
-}
-
-.content-wrapper{
-margin:0!important;
-padding:0!important;
-}
-
-.card{
-border:1px solid #eee!important;
-box-shadow:none!important;
-page-break-inside:avoid;
-}
-
-}
-
+    mjx-container { margin: 10px 0 !important; }
+    .bg-label-success { background: #e8fadf !important; color: #71dd37 !important; }
+    .bg-label-primary { background: #e7e7ff !important; color: #696cff !important; }
+    .bg-label-danger { background: #ffe5e5 !important; color: #ff3e1d !important; }
+    .italic { font-style: italic; }
+    @media print {
+        .no-print, .btn, .layout-navbar, .layout-menu { display: none !important; }
+        .content-wrapper { margin: 0 !important; padding: 0 !important; }
+        .card { border: 1px solid #eee !important; box-shadow: none !important; page-break-inside: avoid; }
+    }
 </style>
-
 @endsection
 
-
 @push('scripts')
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2.1.0"></script>
 <script>
-window.MathJax = {
-tex: {
-inlineMath: [['$', '$'], ['\\(', '\\)']],
-displayMath: [['$$', '$$'], ['\\[', '\\]']]
-},
-svg: { fontCache: 'global' }
-};
+    document.addEventListener('DOMContentLoaded', function() {
+        @foreach($hasil['fuzzifikasi'] as $k)
+        (function() {
+            const ctx = document.getElementById('chart-{{ $k['kode'] }}').getContext('2d');
+            
+            // Cek jika tipe data adalah Diskrit
+            let isDiskrit = false;
+            @if(isset($k['himpunan'][0]) && $k['himpunan'][0]['params']['tipe'] === 'diskrit')
+                isDiskrit = true;
+            @endif
+
+            if (isDiskrit) {
+                // RENDER BAR CHART UNTUK DATA DISKRIT
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: @json(array_column($k['himpunan'], 'nama')),
+                        datasets: [{
+                            data: @json(array_column($k['himpunan'], 'mu')),
+                            backgroundColor: '#696cff',
+                            borderRadius: 4,
+                            barThickness: 30
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, max: 1.1, display: false }, x: { grid: { display: false } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else {
+                // RENDER LINE CHART UNTUK DATA KONTINU
+                @php
+                    $cleanInput = (float) preg_replace('/[^0-9.]/', '', $k['input']);
+                    $allValues = [0];
+                    foreach($k['himpunan'] as $h) {
+                        $allValues = array_merge($allValues, [
+                            (float)$h['params']['a'], (float)$h['params']['b'], 
+                            (float)$h['params']['c'], (float)$h['params']['d']
+                        ]);
+                    }
+                    $maxX = count($allValues) > 0 ? max($allValues) * 1.1 : 100;
+                @endphp
+
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            @foreach($k['himpunan'] as $idx => $s)
+                            @php
+                                $p = $s['params'];
+                                $a = (float)$p['a']; $b = (float)$p['b']; $c = (float)$p['c']; $d = (float)$p['d'];
+                                
+                                if($p['tipe'] == 'bahu_kiri') {
+                                    $pts = "[{x:0, y:1}, {x:$c, y:1}, {x:$d, y:0}, {x:$maxX, y:0}]";
+                                } elseif($p['tipe'] == 'bahu_kanan') {
+                                    $pts = "[{x:0, y:0}, {x:$a, y:0}, {x:$b, y:1}, {x:$maxX, y:1}]";
+                                } else { // trapesium
+                                    $pts = "[{x:$a, y:0}, {x:$b, y:1}, {x:$c, y:1}, {x:$d, y:0}]";
+                                }
+                            @endphp
+                            {
+                                label: '{{ $s['nama'] }}',
+                                data: {!! $pts !!},
+                                borderColor: ['#696cff', '#71dd37', '#ff3e1d', '#03c3ec'][{{ $idx }} % 4],
+                                backgroundColor: 'transparent',
+                                borderWidth: 2, pointRadius: 0, tension: 0
+                            },
+                            @endforeach
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { 
+                            x: { type: 'linear', min: 0, max: {{ $maxX }}, display: true },
+                            y: { min: 0, max: 1.2, display: true }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            annotation: {
+                                annotations: {
+                                    line1: {
+                                        type: 'line', xMin: {{ $cleanInput }}, xMax: {{ $cleanInput }},
+                                        borderColor: 'red', borderWidth: 2, borderDash: [5, 5],
+                                        label: { display: true, content: '{{ $cleanInput }}', position: 'top' }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+        @endforeach
+    });
+
+    window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
 </script>
-
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-
 @endpush
