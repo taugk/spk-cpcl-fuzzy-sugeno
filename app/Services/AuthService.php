@@ -7,7 +7,6 @@ use App\Models\User;
 
 class AuthService
 {
-    
     public function attemptLogin(array $credentials, bool $remember): ?User
     {
         // Tambahkan syarat status aktif
@@ -16,7 +15,7 @@ class AuthService
         if (Auth::attempt($credentials, $remember)) {
             $user = Auth::user();
             
-            // Logika bisnis: Update last login
+            // Update last login
             $user->last_login_at = now();
             $user->save();
 
@@ -26,12 +25,17 @@ class AuthService
         return null;
     }
 
-    
     public function getRedirectPath(User $user): string
     {
-        if ($user->role === 'admin') {
+        // List semua role yang dianggap admin (Super, Pangan, Hartibun)
+        $adminRoles = ['admin', 'admin_pangan', 'admin_hartibun'];
+
+        if (in_array($user->role, $adminRoles)) {
+            // Semua admin diarahkan ke SATU nama route yang sama
             return route('admin.dashboard');
-        } elseif ($user->role === 'uptd') {
+        } 
+        
+        if ($user->role === 'uptd') {
             return route('uptd.dashboard');
         }
 

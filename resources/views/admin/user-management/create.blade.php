@@ -63,6 +63,8 @@
                                     <option value="" disabled selected>Pilih Role</option>
                                     <option value="uptd" {{ old('role') == 'uptd' ? 'selected' : '' }}>UPTD</option>
                                     <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                                    <option value="admin_pangan" {{ old('role') == 'admin_pangan' ? 'selected' : '' }}>Admin Pangan</option>
+                                    <option value="admin_hartibun" {{ old('role') == 'admin_hartibun' ? 'selected' : '' }}>Admin Hartibun</option>
                                 </select>
                             </div>
                         </div>

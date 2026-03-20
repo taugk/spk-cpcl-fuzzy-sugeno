@@ -22,9 +22,9 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
 
             // ROLE & AKSES
-            $table->enum('role', ['admin', 'uptd'])
+            $table->enum('role', ['admin','admin_pangan','admin_hartibun', 'uptd'])
                 ->default('uptd')
-                ->comment('admin = vrifikator, uptd = tim uptd');
+                ->comment('admin = super admin, admin_pangan = verifikator bidang pangan, admin_hartibun = verifikator hartibun, uptd = tim uptd');
 
             $table->enum('status', ['aktif', 'nonaktif'])
                 ->default('aktif');

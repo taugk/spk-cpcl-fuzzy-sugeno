@@ -17,7 +17,7 @@ use App\Http\Controllers\Uptd\DashboardController as UptdDashboardController;
 Route::get('/', function () {
     if (Auth::check()) {
         $role = Auth::user()->role;
-        if ($role === 'admin') {
+        if ($role === 'admin' || $role === 'admin_pangan' || $role === 'admin_hartibun') {
             return redirect()->route('admin.dashboard');
         } elseif ($role === 'uptd') {
             return redirect()->route('uptd.dashboard');
@@ -35,7 +35,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 // =========================================================================
 //  GROUP 1: KHUSUS ADMIN 
 // =========================================================================
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pangan,admin_hartibun'])->group(function () {
     
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

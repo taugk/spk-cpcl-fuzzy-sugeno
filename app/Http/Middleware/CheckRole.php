@@ -9,40 +9,32 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     * @param  string ...$roles  (Menangkap parameter role dari route, misal: 'admin')
-     */
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        // 1. Cek apakah user sudah login
         if (!Auth::check()) {
             return redirect()->route('login');
         }
 
-        // 2. Ambil user yang sedang login
         $user = Auth::user();
 
-        // 3. LOGIKA UTAMA (JANGAN DI-OVERWRITE)
-        // Kita cek apakah role user saat ini ada di dalam daftar $roles yang dikirim dari Route
+        // Cek apakah role user ada di dalam parameter middleware
         if (in_array($user->role, $roles)) {
             return $next($request);
         }
 
-        // 4. PENANGANAN JIKA ROLE TIDAK COCOK (Smart Redirect)
-        // Jika UPTD coba masuk Admin, atau Admin coba masuk UPTD -> Kembalikan ke dashboard asli mereka
+        // Redirect cerdas jika mencoba melompati pagar akses
+        $adminRoles = ['admin', 'admin_pangan', 'admin_hartibun'];
         
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard')->with('error', 'Anda tidak memiliki akses ke halaman tersebut.');
+        if (in_array($user->role, $adminRoles)) {
+            return redirect()->route('admin.dashboard')
+                ->with('error', 'Anda tidak memiliki izin akses ke halaman tersebut.');
         } 
         
         if ($user->role === 'uptd') {
-            return redirect()->route('uptd.dashboard')->with('error', 'Anda tidak memiliki akses ke halaman Admin.');
+            return redirect()->route('uptd.dashboard')
+                ->with('error', 'Halaman ini hanya untuk Administrator.');
         }
 
-        // Fallback terakhir jika role aneh/tidak dikenali
         abort(403, 'Akses Ditolak');
     }
 }

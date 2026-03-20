@@ -19,9 +19,36 @@ class CpclController extends Controller
         $this->cpclService = $cpclService;
     }
 
+    /**
+     * Menentukan prefix folder view berdasarkan role.
+     * Admin, Admin Pangan, dan Admin Hartibun menggunakan folder 'admin'.
+     */
     private function getRolePrefix(): string
     {
-        return Auth::user()->role === 'admin' ? 'admin' : 'uptd';
+        $role = Auth::user()->role;
+        $adminRoles = ['admin', 'admin_pangan', 'admin_hartibun'];
+        
+        return in_array($role, $adminRoles) ? 'admin' : 'uptd';
+    }
+
+    /**
+     * SECURITY SCOPE: Inti dari pembatasan data per bidang.
+     * Digunakan di semua query (index, detail, edit, delete).
+     */
+    private function secureQuery()
+    {
+        $user = Auth::user();
+        $query = Cpcl::query()->with('alamat');
+
+        // Filter berdasarkan Role Bidang
+        if ($user->role === 'admin_pangan') {
+            $query->where('bidang', 'PANGAN');
+        } elseif ($user->role === 'admin_hartibun') {
+            $query->where('bidang', 'HARTIBUN');
+        }
+
+        // Jika role 'admin' (Super Admin), query tidak difilter (tampil semua).
+        return $query;
     }
 
     // =========================================================================
@@ -31,7 +58,7 @@ class CpclController extends Controller
     public function index(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::with('alamat');
+        $query = $this->secureQuery(); // Otomatis filter bidang sesuai login
 
         $this->applyFilters($query, $request);
 
@@ -42,7 +69,7 @@ class CpclController extends Controller
     public function verified(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::with('alamat')->where('status', 'terverifikasi');
+        $query = $this->secureQuery()->where('status', 'terverifikasi');
 
         $this->applyFilters($query, $request);
 
@@ -53,7 +80,7 @@ class CpclController extends Controller
     public function belum(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = Cpcl::with('alamat')->where('status', '!=', 'terverifikasi');
+        $query = $this->secureQuery()->where('status', '!=', 'terverifikasi');
 
         $this->applyFilters($query, $request);
 
@@ -84,7 +111,7 @@ class CpclController extends Controller
     }
 
     // =========================================================================
-    // CRUD VIEWS
+    // CRUD VIEWS (With Scoping Security)
     // =========================================================================
 
     public function create()
@@ -96,21 +123,28 @@ class CpclController extends Controller
     public function edit($id)
     {
         $role = $this->getRolePrefix();
-        $cpcl = Cpcl::with('alamat')->findOrFail($id);
+        // findOrFail akan 404 jika admin pangan mencoba akses ID hartibun
+        $cpcl = $this->secureQuery()->findOrFail($id);
+        
         return view("$role.data-cpcl.form", compact('cpcl'));
     }
 
     public function detail($id)
     {
         $role = $this->getRolePrefix();
-        $cpcl = Cpcl::with('alamat')->findOrFail($id);
+        $cpcl = $this->secureQuery()->findOrFail($id);
+        
         return view("$role.data-cpcl.detail", compact('cpcl'));
     }
 
     public function laporan()
     {
         $role = $this->getRolePrefix();
-        $data = Cpcl::with('alamat')->where('status', 'terverifikasi')->latest()->get();
+        $data = $this->secureQuery()
+                    ->where('status', 'terverifikasi')
+                    ->latest()
+                    ->get();
+                    
         return view("$role.data-cpcl.laporan", compact('data'));
     }
 
@@ -128,13 +162,17 @@ class CpclController extends Controller
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil ditambahkan');
         } catch (\Throwable $e) {
             Log::error('CPCL STORE FAILED: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menyimpan data');
         }
     }
 
     public function update(Request $request, $id)
     {
         $role = $this->getRolePrefix();
+        
+        // Pastikan record yang diupdate adalah milik bidang si admin
+        $this->secureQuery()->findOrFail($id);
+        
         $this->validateCpcl($request, true);
 
         try {
@@ -142,7 +180,7 @@ class CpclController extends Controller
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil diperbarui');
         } catch (\Throwable $e) {
             Log::error('CPCL UPDATE FAILED: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memperbarui data');
         }
     }
 
@@ -154,20 +192,17 @@ class CpclController extends Controller
             'nik_ketua'     => 'required|digits:16',
             'bidang'        => 'required|in:HARTIBUN,PANGAN',
             'rencana_usaha' => 'required|string',
-            
             'kd_kab'        => 'required|string',
             'kabupaten'     => 'required|string',
             'kd_kec'        => 'required|string',
             'kecamatan'     => 'required|string',
             'kd_desa'       => 'required|string',
             'desa'          => 'required|string',
-            // Data lahan
             'lokasi'        => 'required|string',
             'luas_lahan'    => 'required|numeric|min:0',
             'lama_berdiri'  => 'required|integer|min:0',
             'hasil_panen'   => 'required|numeric|min:0',
             'status_lahan'  => 'required|in:milik,sewa,garapan',
-            // File
             'file_proposal' => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf|max:2048',
             'file_ktp'      => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf,jpg,jpeg,png|max:2048',
             'file_sk'       => 'nullable|mimes:pdf|max:2048',
@@ -182,20 +217,18 @@ class CpclController extends Controller
     public function showVerification($id)
     {
         $role     = $this->getRolePrefix();
-        $cpcl     = Cpcl::with('alamat')->findOrFail($id);
+        $cpcl     = $this->secureQuery()->findOrFail($id);
         $kriteria = Kriteria::with('subKriteria')->get();
+        
         return view("$role.data-cpcl.verifikasi", compact('cpcl', 'kriteria'));
     }
 
     public function verify(Request $request, $id)
     {
         $role = $this->getRolePrefix();
-
-        Log::info('Incoming CPCL Verification Request', [
-            'cpcl_id'   => $id,
-            'data'      => $request->except('_token'),
-            'timestamp' => now()->toDateTimeString(),
-        ]);
+        
+        // Cek otorisasi bidang sebelum proses verifikasi
+        $this->secureQuery()->findOrFail($id);
 
         $request->validate([
             'nilai'               => 'required|array',
@@ -205,29 +238,10 @@ class CpclController extends Controller
 
         try {
             $this->cpclService->verifyCpcl($id, $request->all());
-
-            Log::info('CPCL VERIFIED SUCCESS', [
-                'cpcl_id'   => $id,
-                'status'    => $request->status,
-                'timestamp' => now()->toDateTimeString(),
-            ]);
-
-            $pesan = match ($request->status) {
-                'terverifikasi'   => 'CPCL berhasil diverifikasi dan masuk antrian perhitungan.',
-                'perlu_perbaikan' => 'CPCL dikembalikan untuk perbaikan.',
-                'ditolak'         => 'CPCL telah ditolak.',
-                default           => 'Status CPCL berhasil diperbarui.',
-            };
-
-            return redirect()->route("$role.cpcl.index")->with('success', $pesan);
-
+            return redirect()->route("$role.cpcl.index")->with('success', 'Status CPCL berhasil diperbarui');
         } catch (\Throwable $e) {
-            Log::error('CPCL VERIFICATION FAILED', [
-                'cpcl_id'       => $id,
-                'error_message' => $e->getMessage(),
-            ]);
-
-            return back()->withInput()->with('error', 'Gagal memverifikasi data: ' . $e->getMessage());
+            Log::error('CPCL VERIFICATION FAILED: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal memverifikasi data');
         }
     }
 
@@ -239,7 +253,10 @@ class CpclController extends Controller
     {
         $role = $this->getRolePrefix();
         try {
-            $this->cpclService->deleteCpcl($id);
+            // Gunakan secureQuery agar admin bidang tidak bisa hapus data bidang lain via script/URL
+            $cpcl = $this->secureQuery()->findOrFail($id);
+            $this->cpclService->deleteCpcl($cpcl->id);
+            
             return redirect()->route("$role.cpcl.index")->with('success', 'Data CPCL berhasil dihapus');
         } catch (\Throwable $e) {
             Log::error('CPCL DELETE FAILED: ' . $e->getMessage());

@@ -63,6 +63,8 @@
                                 <select class="form-select" id="role" name="role" required>
                                     <option value="uptd" {{ old('role', $user->role) == 'uptd' ? 'selected' : '' }}>UPTD</option>
                                     <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                                    <option value="admin_pangan" {{ old('role', $user->role) == 'admin_pangan' ? 'selected' : '' }}>Admin Pangan</option>
+                                    <option value="admin_hartibun" {{ old('role', $user->role) == 'admin_hartibun' ? 'selected' : '' }}>Admin Hartibun</option>
                                 </select>
                             </div>
                         </div>

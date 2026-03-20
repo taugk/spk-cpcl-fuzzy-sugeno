@@ -51,7 +51,7 @@ class UserManagementController extends Controller
             'username'  => 'required|string|unique:users,username',
             'email'     => 'required|email|unique:users,email',
             'password'  => 'required|min:6',
-            'role'      => 'required|in:admin,uptd',
+            'role'      => 'required|in:admin,uptd,admin_pangan,admin_hartibun',
             'status'    => 'required|in:aktif,nonaktif',
         ]);
 
@@ -85,8 +85,8 @@ class UserManagementController extends Controller
             // Ignore unique validation untuk ID user yang sedang diedit
             'username'  => 'required|string|unique:users,username,' . $id,
             'email'     => 'required|email|unique:users,email,' . $id,
-            'password'  => 'nullable|min:6', // Boleh kosong jika tidak ganti password
-            'role'      => 'required|in:admin,uptd',
+            'password'  => 'nullable|min:6', 
+            'role'      => 'required|in:admin,uptd, admin_pangan, admin_hartibun',
             'status'    => 'required|in:aktif,nonaktif',
         ]);
 

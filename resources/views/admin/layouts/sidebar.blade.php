@@ -2,7 +2,13 @@
   
   {{-- BRAND / LOGO --}}
   <div class="app-brand demo" style="height: 80px;">
-    <a href="{{ route(auth()->user()->role . '.dashboard') }}" class="app-brand-link gap-2">
+    @php
+      // Logika untuk menentukan dashboard induk agar tidak error Route Not Defined
+      $isAdminGroup = in_array(auth()->user()->role, ['admin', 'admin_pangan', 'admin_hartibun']);
+      $dashRoute = $isAdminGroup ? 'admin.dashboard' : 'uptd.dashboard';
+    @endphp
+    
+    <a href="{{ route($dashRoute) }}" class="app-brand-link gap-2">
       <span class="app-brand-logo demo">
         <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo" width="42">
       </span>
@@ -19,14 +25,14 @@
 
     {{-- DASHBOARD --}}
     <li class="menu-item {{ request()->routeIs('*.dashboard') ? 'active' : '' }}">
-      <a href="{{ route(auth()->user()->role . '.dashboard') }}" class="menu-link">
+      <a href="{{ route($dashRoute) }}" class="menu-link">
         <i class="menu-icon tf-icons bx bx-home-circle"></i>
         <div>Dashboard</div>
       </a>
     </li>
 
-    {{-- MENU ADMIN ONLY --}}
-    @if(auth()->user()->role == 'admin')
+    {{-- MENU ADMIN ONLY (Super Admin, Pangan, Hartibun) --}}
+    @if($isAdminGroup)
       <li class="menu-header small text-uppercase">
         <span class="menu-header-text">Master Data</span>
       </li>
@@ -41,12 +47,16 @@
           <li class="menu-item {{ request()->routeIs('admin.cpcl.verifikasi') ? 'active' : '' }}"><a href="{{ route('admin.cpcl.verifikasi') }}" class="menu-link"><div>Terverifikasi</div></a></li>
         </ul>
       </li>
+
+      {{-- Hanya Super Admin yang bisa mengelola User --}}
+      @if(auth()->user()->role == 'admin')
       <li class="menu-item {{ request()->routeIs('admin.user-management*') ? 'active' : '' }}">
         <a href="{{ route('admin.user-management.index') }}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-group"></i>
           <div>Data Pengguna</div>
         </a>
       </li>
+      @endif
 
       <li class="menu-header small text-uppercase">
         <span class="menu-header-text">Logika Fuzzy</span>
@@ -89,7 +99,10 @@
       <span class="menu-header-text">Laporan</span>
     </li>
     <li class="menu-item {{ request()->routeIs('*.laporan*') ? 'active' : '' }}">
-      <a href="{{ route(auth()->user()->role . '.laporan.index') }}" class="menu-link">
+      @php
+        $laporanRoute = $isAdminGroup ? 'admin.laporan.index' : 'uptd.laporan.index';
+      @endphp
+      <a href="{{ route($laporanRoute) }}" class="menu-link">
         <i class="menu-icon tf-icons bx bxs-file-pdf"></i>
         <div>Laporan Akhir</div>
       </a>
