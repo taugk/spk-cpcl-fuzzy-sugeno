@@ -117,4 +117,46 @@ class UserManagementController extends Controller
             return back()->with('error', $e->getMessage());
         }
     }
+
+        /**
+        * Menampilkan profil user.
+        */
+
+    public function profile($id)
+    {
+        $user = $this->userService->getUserById($id);
+
+        return view('admin.user-management.profile', compact('user'));
+    }
+
+     /**
+     * Menampilkan form edit profil user.
+     */
+
+    public function editProfile($id)
+    {
+        $user = $this->userService->getUserById($id);
+
+        return view('admin.user-management.edit-profile', compact('user'));
+    }
+
+    /**
+     * Mengupdate profil user.
+     */
+
+    public function updateProfile(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'name'      => 'required|string|max:255',
+            'username'  => 'required|string|unique:users,username,' . $id,
+            'email'     => 'required|email|unique:users,email,' . $id,
+            'password'  => 'nullable|min:6', 
+        ]);
+
+        $user = $this->userService->getUserById($id);
+        $this->userService->updateUser($user, $validated);
+
+        return redirect()->route('admin.user-management.profile', $id)
+            ->with('success', 'Profil berhasil diperbarui.');
+    }
 }

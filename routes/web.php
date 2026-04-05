@@ -42,7 +42,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pa
     // USER MANAGEMENT
     Route::resource('user-management', UserManagementController::class)->except(['show']);
     // Alias jika diperlukan oleh view lama
-    Route::get('/user', [UserManagementController::class, 'index'])->name('user-management.index'); 
+    Route::get('/user', [UserManagementController::class, 'index'])->name('user-management.index');
+    Route::get('user/profil/{id}', [UserManagementController::class, 'profile'])->name('user-management.profile');
+    Route::get('user/{id}/edit', [UserManagementController::class, 'edit'])->name('user-management.edit');
+    Route::put('user/{id}', [UserManagementController::class, 'update'])->name('user-management.update');
+    Route::delete('user/{id}', [UserManagementController::class, 'destroy'])->name('user-management.destroy');
+    Route::get('user/{id}/edit-profile', [UserManagementController::class, 'editProfile'])->name('user-management.edit-profile');
+    Route::put('user/{id}/update-profile', [UserManagementController::class, 'updateProfile'])->name('user-management.update-profile'); 
 
     // Konfigurasi Fuzzy (Kriteria & Sub)
     Route::resource('kriteria', KriteriaController::class)->only(['index', 'store', 'update', 'destroy']);
