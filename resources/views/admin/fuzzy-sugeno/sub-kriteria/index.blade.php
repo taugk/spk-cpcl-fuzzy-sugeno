@@ -195,6 +195,6 @@
     </div>
 </div>
 
-{{-- Memanggil Modal yang baru saja kita buat di pembahasan sebelumnya --}}
+
 @include('admin.partials.modals.sub_kriteria_modal')
 @endsection

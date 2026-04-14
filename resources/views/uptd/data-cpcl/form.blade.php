@@ -34,7 +34,7 @@
                 </div>
 
                 {{-- Terhubung otomatis dengan SweetAlert global berkat class form-confirm --}}
-                <form method="POST" action="{{ $route }}" enctype="multipart/form-data" class="form-confirm">
+                <form method="POST" action="{{ $route }}" enctype="multipart/form-data">
                     @csrf
                     @if($isEdit)
                         @method('PUT')

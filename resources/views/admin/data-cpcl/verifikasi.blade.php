@@ -255,13 +255,13 @@
                                                 <div class="fw-bold small text-dark">
                                                     {{ $item->kode_kriteria }} - {{ $item->nama_kriteria }}
                                                 </div>
-                                                <span class="badge {{ $item->jenis == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
-                                                    {{ strtoupper($item->jenis) }}
+                                                <span class="badge {{ $item->jenis_kriteria == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
+                                                    {{ strtoupper($item->jenis_kriteria) }}
                                                 </span>
                                             </div>
 
                                             {{-- JIKA JENIS KONTINU (Input Angka) --}}
-                                            @if($item->jenis == 'kontinu')
+                                            @if($item->jenis_kriteria == 'kontinu')
                                                 <div>
                                                     <label class="form-label text-xxs fw-bold text-muted mb-1">
                                                         Input Verifikasi (Data UPTD: {{ $cpcl->{$item->mapping_field} ?? '0' }})
@@ -373,7 +373,7 @@
                             </div>
                             <div class="mb-4">
                                 <label class="form-label small fw-bold">Catatan Verifikator</label>
-                                <textarea name="catatan" class="form-control" rows="3" placeholder="Masukkan alasan atau instruksi revisi..."></textarea>
+                                <textarea name="catatan_verifikator" class="form-control" rows="3" placeholder="Masukkan alasan atau instruksi revisi..."></textarea>
                             </div>
                             <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow">
                                 <i class="bi bi-save me-2"></i> SIMPAN KEPUTUSAN

@@ -24,10 +24,9 @@ return new class extends Migration
 
             // BAGIAN 2: DATA OPERASIONAL & TEKNIS
             $table->decimal('luas_lahan', 8, 2);
-            $table->integer('lama_berdiri'); // dalam tahun
-            $table->decimal('hasil_panen', 8, 2); // ton/ha
-            $table->string('status_lahan'); // milik sendiri / sewa / bagi hasil
-
+            $table->integer('lama_berdiri'); 
+            $table->decimal('hasil_panen', 8, 2); 
+            $table->string('status_lahan'); 
             // DATA SPASIAL (KOORDINAT)
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
@@ -39,7 +38,7 @@ return new class extends Migration
             $table->string('foto_lahan')->nullable();
 
             // STATUS TRACKING
-            $table->string('status')->default('baru'); // baru, terverifikasi, ditolak
+            $table->string('status')->default('baru'); 
             $table->text('catatan_verifikator')->nullable();
 
             $table->timestamps();
