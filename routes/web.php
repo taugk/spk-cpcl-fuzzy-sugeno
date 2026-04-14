@@ -79,6 +79,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pa
     Route::get('/detail/{id}', [CpclController::class, 'detail'])->name('cpcl.show');
     Route::get('/verifikasi/{id}', [CpclController::class, 'showVerification'])->name('cpcl.verify');
     Route::post('/verifikasi/{id}', [CpclController::class, 'verify'])->name('cpcl.verify.process');
+    Route::get('/perbaikan', [CpclController::class, 'perbaikan'])->name('cpcl.perbaikan');
+    Route::get('/ditolak', [CpclController::class, 'ditolak'])->name('cpcl.ditolak');
 
     // Laporan
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');

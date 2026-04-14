@@ -80,12 +80,40 @@ class CpclController extends Controller
     public function belum(Request $request)
     {
         $role  = $this->getRolePrefix();
-        $query = $this->secureQuery()->where('status', '!=', 'terverifikasi');
+        $query = $this->secureQuery()->where('status', '!=', 'terverifikasi' )->where('status', '!=', 'ditolak')->where('status', '!=', 'perlu_perbaikan');
 
         $this->applyFilters($query, $request);
 
         $data = $query->latest()->paginate(10)->withQueryString();
         return view("$role.data-cpcl.belum-verifikasi", compact('data'));
+    }
+
+    public function perbaikan(Request $request)
+    {
+        $role  = $this->getRolePrefix();
+
+        $query = $this->secureQuery()->where('status', 'perlu_perbaikan');
+        $this->applyFilters($query, $request);
+
+
+        $data = $query->latest()->paginate(10)->withQueryString();
+
+
+        return view("$role.data-cpcl.perbaikan", compact('data'));
+    }
+
+    public function ditolak(Request $request)
+    {
+        $role  = $this->getRolePrefix();
+
+        
+
+        $query = $this->secureQuery()->where('status', 'ditolak');
+        $this->applyFilters($query, $request);
+
+        $data = $query->latest()->paginate(10)->withQueryString();
+
+        return view("$role.data-cpcl.ditolak", compact('data'));
     }
 
     private function applyFilters($query, Request $request): void

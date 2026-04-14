@@ -121,10 +121,10 @@
                                     <td class="text-center">
                                         @php
                                             $prioBadge = match($h->skala_prioritas) {
-                                                'Prioritas I'   => 'bg-danger',
-                                                'Prioritas II'  => 'bg-warning text-dark',
-                                                'Prioritas III' => 'bg-info',
-                                                default         => 'bg-secondary'
+                                                'Prioritas I'   => 'bg-success text-white',
+                                                'Prioritas II'  => 'bg-info text-dark',
+                                                'Prioritas III' => 'bg-warning text-dark',
+                                                default         => 'bg-danger text-white',
                                             };
                                         @endphp
                                         <span class="badge {{ $prioBadge }} small px-3">
@@ -176,22 +176,22 @@
                                 </thead>
                                 <tbody>
                                     <tr class="table-danger border-white">
-                                        <td class="fw-bold">z > 0.80</td>
+                                        <td class="fw-bold">z > 0.75</td>
                                         <td>Prioritas I</td>
                                         <td>Sangat Layak (Prioritas Utama)</td>
                                     </tr>
                                     <tr class="table-warning border-white">
-                                        <td class="fw-bold">0.60 < z ≤ 0.80</td>
+                                        <td class="fw-bold">0.60 < z ≤ 0.75</td>
                                         <td>Prioritas II</td>
                                         <td>Layak (Diprioritaskan)</td>
                                     </tr>
                                     <tr class="table-info border-white">
-                                        <td class="fw-bold">0.40 < z ≤ 0.60</td>
+                                        <td class="fw-bold">0.55 < z ≤ 0.60</td>
                                         <td>Prioritas III</td>
                                         <td>Cukup Layak (Dapat Diterima)</td>
                                     </tr>
                                     <tr class="table-light">
-                                        <td class="fw-bold text-muted">z ≤ 0.40</td>
+                                        <td class="fw-bold text-muted">z ≤ 0.55</td>
                                         <td class="text-muted">Prioritas IV</td>
                                         <td class="text-muted italic text-start px-3">Dipertimbangkan (Cadangan/Evaluasi)</td>
                                     </tr>
