@@ -68,6 +68,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pa
     Route::get('/cpcl', [CpclController::class, 'index'])->name('cpcl.index'); 
     Route::get('/cpcl/terverifikasi', [CpclController::class, 'verified'])->name('cpcl.verifikasi');
     Route::get('/cpcl/belum-verifikasi', [CpclController::class, 'belum'])->name('cpcl.belum-verifikasi');
+    Route::post('/cpcl/import', [CpclController::class, 'import'])->name('cpcl.import');
     Route::get('/tambah', [CpclController::class, 'create'])->name('add.cpcl');
     Route::post('/tambah', [CpclController::class, 'store'])->name('cpcl.store');
     Route::get('/cpcl/{id}/edit', [CpclController::class, 'edit'])->name('cpcl.edit');
@@ -96,7 +97,8 @@ Route::prefix('uptd')->name('uptd.')->middleware(['auth', 'role:uptd'])->group(f
 
     // Data CPCL (UPTD)
     Route::get('/cpcl', [CpclController::class, 'index'])->name('cpcl.index'); 
-    Route::get('/cpcl/create', [CpclController::class, 'create'])->name('cpcl.create'); 
+    Route::get('/cpcl/create', [CpclController::class, 'create'])->name('add.cpcl'); 
+    Route::post('/cpcl/import', [CpclController::class, 'import'])->name('cpcl.import');
     Route::post('/cpcl', [CpclController::class, 'store'])->name('cpcl.store');
     Route::get('/cpcl/{id}', [CpclController::class, 'detail'])->name('cpcl.show'); 
     Route::get('/cpcl/{id}/edit', [CpclController::class, 'edit'])->name('cpcl.edit');

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Imports\CpclImport;
 use App\Models\Cpcl;
 use App\Models\Kriteria;
 use App\Services\CpclService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class CpclController extends Controller
 {
@@ -272,6 +274,37 @@ class CpclController extends Controller
             return back()->withInput()->with('error', 'Gagal memverifikasi data');
         }
     }
+
+    public function import(Request $request)
+{
+    try {
+
+        $request->validate([
+            'file_excel' => 'required|file|mimes:xlsx,xls,csv'
+        ]);
+
+        Excel::import(
+            new CpclImport,
+            $request->file('file_excel')
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Data CPCL berhasil diimport'
+        ]);
+
+    } catch (\Exception $e) {
+
+        Log::error('Import CPCL gagal', [
+            'error' => $e->getMessage()
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal import: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
     // =========================================================================
     // DELETE

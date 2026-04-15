@@ -4,7 +4,7 @@
     <a href="{{ Route::has('uptd.dashboard') ? route('uptd.dashboard') : '#' }}" class="app-brand-link gap-2">
       
       <span class="app-brand-logo demo">
-         <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo Dinas Pertanian" width="42" height="auto">
+         <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo Dinas Pertanian" width="80" height="auto">
       </span>
 
       <div class="d-flex flex-column justify-content-center">
