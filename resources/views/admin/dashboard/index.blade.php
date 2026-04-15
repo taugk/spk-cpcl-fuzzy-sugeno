@@ -7,7 +7,7 @@
     {{-- Widget Atas --}}
     <div class="row">
         <div class="col-lg-8 mb-4">
-            <div class="card bg-primary text-white">
+            <div class="card text-white" style="background: linear-gradient(135deg, #2e7d32, #66bb6a);">
                 <div class="d-flex align-items-end row">
                     <div class="col-sm-7">
                         <div class="card-body">
@@ -45,7 +45,7 @@
     <div class="row">
         @php
             $stats = [
-                ['label' => 'Total CPCL', 'value' => $totalCpcl, 'color' => 'primary', 'icon' => 'bx-spreadsheet'],
+                ['label' => 'Total CPCL', 'value' => $totalCpcl, 'color' => 'success', 'icon' => 'bx-spreadsheet'],
                 ['label' => 'Baru', 'value' => $countBaru, 'color' => 'warning', 'icon' => 'bx-time-five'],
                 ['label' => 'Terverifikasi', 'value' => $countTerverifikasi, 'color' => 'success', 'icon' => 'bx-check-shield'],
                 ['label' => 'Ditolak', 'value' => $countDitolak, 'color' => 'danger', 'icon' => 'bx-x-circle'],
@@ -113,7 +113,14 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const themeColors = ['#696cff', '#03c3ec', '#71dd37', '#ff3e1d', '#ffab00', '#8592a3'];
+     const themeColors = [
+         '#2e7d32', // hijau tua (daun)
+         '#66bb6a', // hijau segar
+         '#a5d6a7', // hijau muda
+         '#8d6e63', // coklat tanah
+         '#c0ca33', // hijau kekuningan (padi)
+         '#5d4037'  // coklat tua
+     ];
 
     // 1. Tren Chart (Line)
     new ApexCharts(document.querySelector("#trenChart"), {
@@ -134,7 +141,7 @@ new ApexCharts(document.querySelector("#statusChart"), {
     },
     labels: @json($statusLabels),
     series: @json($statusData),
-    colors: ['#ffab00', '#71dd37', '#ff3e1d'],
+    colors: ['#c0ca33', '#66bb6a', '#8d6e63'],
     legend: { 
         position: 'bottom' 
     },

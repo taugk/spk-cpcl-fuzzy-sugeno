@@ -9,7 +9,7 @@
 ===================================================== --}}
 <div class="container-xxl flex-grow-1 container-p-y no-print">
     <div class="d-flex gap-2 mb-4">
-        <button onclick="window.print()" class="btn btn-primary">
+        <button onclick="window.print()" class="btn btn-success">
             <i class="bx bxs-printer me-1"></i> Cetak Dokumen
         </button>
         <a href="{{ route('uptd.laporan.index') }}" class="btn btn-secondary">
@@ -28,8 +28,8 @@
         ===================================================== --}}
         <table class="header-table">
             <tr>
-                <td style="width:15%; vertical-align:middle;">
-                    <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" class="logo">
+                <td style="width:25%; vertical-align:middle;">
+                    <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" class="logo">
                 </td>
                 <td style="text-align:center; vertical-align:middle;">
                     <h5 class="mb-0">PEMERINTAH KABUPATEN KUNINGAN</h5>

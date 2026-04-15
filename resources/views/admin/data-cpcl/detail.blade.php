@@ -29,7 +29,7 @@
                     <div class="card-body text-center">
                         <div class="mx-auto mb-3">
                             <div class="avatar avatar-xl d-inline-block">
-                                <span class="avatar-initial rounded-circle bg-label-primary shadow-sm">
+                                <span class="avatar-initial rounded-circle bg-label-success shadow-sm">
                                     <i class="bx bx-group fs-1"></i>
                                 </span>
                             </div>
@@ -175,7 +175,7 @@
                             @if($cpcl->latitude)
                             <div class="text-end">
                                 <p class="mb-1 small fw-bold">Lat: {{ $cpcl->latitude }} | Long: {{ $cpcl->longitude }}</p>
-                                <a href="https://www.google.com/maps?q={{ $cpcl->latitude }},{{ $cpcl->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <a href="https://www.google.com/maps?q={{ $cpcl->latitude }},{{ $cpcl->longitude }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
                                     <i class="bx bx-directions me-1"></i> Navigasi Maps
                                 </a>
                             </div>
@@ -226,7 +226,7 @@
                 
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-label-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    <a id="downloadBtn" class="btn btn-primary btn-sm shadow-sm" download>
+                    <a id="downloadBtn" class="btn btn-success btn-sm shadow-sm" download>
                         <i class="bx bx-download me-1"></i> Unduh Berkas
                     </a>
                 </div>

@@ -44,7 +44,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.9); 
+            background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
             z-index: 999999 !important; /* Menaikkan lapisan ke paling atas */
             display: flex;
             justify-content: center;
@@ -78,10 +78,10 @@
 
     <div id="global-loader">
         <div class="d-flex flex-column justify-content-center align-items-center">
-            <div class="spinner-border spinner-border-lg text-primary" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.25em;">
+            <div class="spinner-border spinner-border-lg" style="color:#2e7d32;" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.25em;">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 fw-bold text-primary loading-text" style="letter-spacing: 1px; font-size: 0.9rem;">MEMPROSES DATA...</p>
+            <p class="mt-3 fw-bold loading-text" style="color:#2e7d32;" style="letter-spacing: 1px; font-size: 0.9rem;">MEMPROSES DATA...</p>
         </div>
     </div>
 

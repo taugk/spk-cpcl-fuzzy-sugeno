@@ -15,7 +15,7 @@
 
                 <div class="d-flex gap-2">
                     <button type="button"
-                            class="btn btn-primary"
+                            class="btn btn-success"
                             data-bs-toggle="modal"
                             data-bs-target="#modalTambahSubKriteria">
                         <i class="bx bx-plus me-1"></i>
@@ -104,7 +104,7 @@
                                         @endif
 
                                         <td>
-                                            <span class="fw-medium text-primary">
+                                            <span class="fw-medium text-dark">
                                                 {{ $sub->nama_sub_kriteria }}
                                             </span>
                                         </td>
@@ -143,7 +143,7 @@
                                                 <div class="d-flex justify-content-center gap-2">
                                                     {{-- EDIT --}}
                                                     <button type="button"
-                                                            class="btn btn-icon btn-outline-primary btn-sm"
+                                                            class="btn btn-icon btn-outline-success btn-sm"
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#modalEditSubKriteria"
                                                             onclick="isiFormEditSub('{{ $kriteria->id }}', '{{ $kriteria->nama_kriteria }}', '{{ $kriteria->jenis_kriteria }}', '{{ $kriteria->subKriteria->toJson() }}')">

@@ -45,7 +45,7 @@
                     
                     <div class="app-brand justify-content-center flex-column mb-4">
                         <div class="mb-3 text-center">
-                            <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo Kab Kuningan" width="60">
+                            <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo Kab Kuningan" width="100">
                         </div>
                         
                         <h4 class="system-title text-center">SPK CPCL</h4>

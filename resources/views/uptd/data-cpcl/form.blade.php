@@ -20,7 +20,7 @@
                 <div class="card-header border-bottom mb-4">
                     <div class="d-flex align-items-center">
                         <div class="avatar flex-shrink-0 me-3">
-                            <span class="avatar-initial rounded bg-label-primary">
+                            <span class="avatar-initial rounded bg-label-success">
                                 <i class="bx {{ $isEdit ? 'bx-edit' : 'bx-file' }}"></i>
                             </span>
                         </div>
@@ -45,8 +45,8 @@
                         {{-- SEKSI 1 --}}
                         <div class="mb-5">
                             <div class="d-flex align-items-center mb-3">
-                                <span class="badge badge-center rounded-pill bg-primary me-2">1</span>
-                                <h6 class="mb-0 text-primary uppercase">Informasi Kelompok & Usulan</h6>
+                                <span class="badge badge-center rounded-pill bg-success me-2">1</span>
+                                <h6 class="mb-0 text-dark uppercase">Informasi Kelompok & Usulan</h6>
                             </div>
 
                             <div class="row g-3 px-lg-3">
@@ -175,8 +175,8 @@
                         {{-- SEKSI 2 --}}
                         <div class="mb-5">
                             <div class="d-flex align-items-center mb-3">
-                                <span class="badge badge-center rounded-pill bg-primary me-2">2</span>
-                                <h6 class="mb-0 text-primary uppercase">Data Lahan & Titik Koordinat</h6>
+                                <span class="badge badge-center rounded-pill bg-success me-2">2</span>
+                                <h6 class="mb-0 text-dark uppercase">Data Lahan & Titik Koordinat</h6>
                             </div>
 
                             <div class="row g-3 px-lg-3">
@@ -261,8 +261,8 @@
                         {{-- SEKSI 3 --}}
                         <div class="mb-4">
                             <div class="d-flex align-items-center mb-3">
-                                <span class="badge badge-center rounded-pill bg-primary me-2">3</span>
-                                <h6 class="mb-0 text-primary uppercase">Lampiran Dokumen</h6>
+                                <span class="badge badge-center rounded-pill bg-success me-2">3</span>
+                                <h6 class="mb-0 text-dark uppercase">Lampiran Dokumen</h6>
                             </div>
 
                             <div class="row g-4 px-lg-3">
@@ -348,7 +348,7 @@
                     <div class="card-footer bg-light d-flex justify-content-between align-items-center">
                         <a href="{{ route('uptd.cpcl.index') }}" class="btn btn-label-secondary">Batal</a>
 
-                        <button type="submit" class="btn btn-primary btn-lg px-4 shadow">
+                        <button type="submit" class="btn btn-success btn-lg px-4 shadow">
                             <i class="bx bx-save me-1"></i>
                             {{ $isEdit ? 'Update Data' : 'Simpan Data' }}
                         </button>

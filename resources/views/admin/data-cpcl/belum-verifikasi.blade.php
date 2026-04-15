@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Data Master CPCL - Belum Verifikasi')
+@section('title', 'Data Master CPCL')
 
 @section('content')
 <div class="content-wrapper">
@@ -9,13 +9,13 @@
         <div class="card">
             <div class="card-header border-bottom d-flex flex-column flex-md-row align-items-center justify-content-between">
                 <div>
-                    <h5 class="card-title mb-0">CPCL Belum Verifikasi</h5>
-                    <small class="text-muted">Data Calon Petani & Calon Lokasi yang Membutuhkan Tindakan (Periode 2026)</small>
+                    <h5 class="card-title mb-0">Master Data CPCL</h5>
+                    <small class="text-muted">Data Calon Petani & Calon Lokasi (Periode 2026)</small>
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bx bx-export me-1"></i> Export
                         </button>
                         <ul class="dropdown-menu">
@@ -23,7 +23,7 @@
                             <li><a class="dropdown-item" href="#"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
                         </ul>
                     </div>
-                    <a href="{{ route('admin.add.cpcl') }}" class="btn btn-primary">
+                    <a href="{{ route('admin.add.cpcl') }}" class="btn btn-success">
                         <i class="bx bx-plus me-1"></i> Tambah CPCL
                     </a>
                 </div>
@@ -31,14 +31,14 @@
 
             {{-- FILTER SECTION --}}
             <div class="card-body mt-3">
-                <form action="{{ url()->current() }}" method="GET" class="row g-3">
+                <form action="{{ route('admin.cpcl.index') }}" method="GET" class="row g-3">
                     
                     {{-- DROPDOWN KECAMATAN DARI API --}}
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Kecamatan</label>
                         <select name="kecamatan" id="filter-kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
                             <option value="">Sedang memuat...</option>
-                            {{-- Option akan dirender melalui JavaScript API --}}
+                            {{-- Option akan dirender melalui JavaScript di bawah --}}
                         </select>
                     </div>
                     
@@ -66,10 +66,9 @@
                         <div class="input-group input-group-sm w-75">
                             <span class="input-group-text"><i class="bx bx-search"></i></span>
                             <input type="text" name="search" class="form-control" placeholder="Cari Poktan / NIK Ketua..." value="{{ request('search') }}">
-                            <button class="btn btn-primary" type="submit">Cari</button>
-                            
+                            <button class="btn btn-success" type="submit">Cari</button>
                             @if(request()->anyFilled(['kecamatan', 'rencana_usaha', 'search']))
-                                <a href="{{ url()->current() }}" class="btn btn-outline-danger" title="Reset Filter">
+                                <a href="{{ route('admin.cpcl.index') }}" class="btn btn-outline-danger" title="Reset Filter">
                                     <i class="bx bx-x"></i>
                                 </a>
                             @endif
@@ -112,7 +111,7 @@
                                     <span class="badge bg-label-secondary text-wrap text-start" style="max-width: 150px; line-height: 1.4;">
                                         @if(isset($row->alamat->desa) || isset($row->alamat->kecamatan))
                                         <small class="text-muted" style="font-size: 0.75rem;">
-                                            <i class="bx bx-map text-primary"></i> 
+                                            
                                             {{ $row->alamat->desa ?? '-' }}, {{ $row->alamat->kecamatan ?? '-' }}
                                         </small>
                                     @endif
@@ -121,7 +120,7 @@
                                     
 
                                     @if(isset($row->latitude) && isset($row->longitude))
-                                        <a href="https://www.google.com/maps?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-primary small mt-1" style="width: max-content;">
+                                        <a href="https://www.google.com/maps?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-success small mt-1" style="width: max-content;">
                                             <i class="bx bx-map-pin me-1"></i> Lihat Peta
                                         </a>
                                     @endif
@@ -129,7 +128,7 @@
                             </td>
 
                             <td>
-                                <span class="fw-semibold text-primary d-block">{{ $row->rencana_usaha }}</span>
+                                <span class="fw-semibold text-dark d-block">{{ $row->rencana_usaha }}</span>
                                 <small class="badge bg-label-warning text-uppercase" style="font-size: 0.65rem;">
                                     {{ $row->bidang }}
                                 </small>
@@ -177,9 +176,9 @@
 
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    {{-- 1. Tombol Verifikasi (Ikon Shield/Check) --}}
+                                    {{-- 1. Tombol Verifikasi --}}
                                     @if(strtolower($row->status) == 'baru')
-                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-primary" title="Verifikasi Data">
+                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-icon btn-sm btn-success" title="Verifikasi Data">
                                             <i class="bx bx-check-shield"></i>
                                         </a>
                                     @else
@@ -193,12 +192,12 @@
                                         <i class="bx bx-show"></i>
                                     </a>
 
-                                    {{-- 3. Tombol Edit --}}
+                                    {{-- 3. Tombol Edit
                                     <a href="{{ route('admin.cpcl.edit', $row->id) }}" class="btn btn-icon btn-sm btn-label-warning" title="Edit Data">
                                         <i class="bx bx-edit-alt"></i>
-                                    </a>
+                                    </a> --}}
 
-                                    {{-- 4. Tombol Hapus Terhubung dengan Global SweetAlert --}}
+                                    {{-- 4. Tombol Hapus (Menggunakan SweetAlert global .btn-delete-confirm) --}}
                                     <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
@@ -239,11 +238,11 @@
                 <h5 class="modal-title" id="modalTitle">Preview Lampiran</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-0" style="background: #f5f5f9;">
+            <div class="modal-body p-0" style="background: #f1f8e9;">
                 <div id="previewContent" style="height: 70vh; overflow: auto;"></div>
             </div>
             <div class="modal-footer">
-                <a href="javascript:void(0)" id="downloadBtn" class="btn btn-outline-primary btn-sm">
+                <a href="javascript:void(0)" id="downloadBtn" class="btn btn-outline-success btn-sm">
                     <i class="bx bx-download me-1"></i> Download File
                 </a>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
@@ -330,4 +329,39 @@
             });
     });
 </script>
+
+<style>
+/* 🌿 Table hover lebih hidup */
+.table-hover tbody tr:hover {
+    background-color: #f1f8e9;
+    transition: 0.2s;
+}
+
+/* 🌱 Card lebih lembut */
+.card {
+    border-radius: 12px;
+}
+
+/* 🌾 Badge lebih soft */
+.badge {
+    border-radius: 6px;
+}
+
+/* 🌿 Input focus hijau */
+.form-control:focus {
+    border-color: #66bb6a;
+    box-shadow: 0 0 0 0.1rem rgba(102,187,106,0.25);
+}
+
+/* 🌱 Button hover */
+.btn-success:hover {
+    background-color: #2e7d32;
+}
+
+/* 🌍 Pagination hijau */
+.page-item.active .page-link {
+    background-color: #66bb6a;
+    border-color: #66bb6a;
+}
+</style>
 @endpush

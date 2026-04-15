@@ -33,7 +33,7 @@
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-success w-100">
                         <i class="bx bx-filter-alt me-1"></i> Filter
                     </button>
                     <a href="{{ route('uptd.laporan.index') }}" class="btn btn-outline-secondary" title="Reset Filter">
@@ -47,7 +47,7 @@
     <div class="card printable-area">
         <div class="card-header d-flex justify-content-between align-items-center border-bottom mb-3 py-3 no-print">
             <div class="d-flex align-items-center">
-                <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo" width="60" class="me-3">
+                <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo" width="90" class="me-3">
                 <div>
                     <h4 class="mb-0 fw-bold text-dark">LAPORAN SURAT KEPUTUSAN (SK) CPCL</h4>
                     <p class="mb-0 text-muted">Sistem Pendukung Keputusan - Unit Pelaksana Teknis Daerah (UPTD)</p>
@@ -87,7 +87,7 @@
                             <td>{{ $row->cpcl->lokasi }}</td>
                             <td>{{ $row->cpcl->bidang }}</td>
                             <td class="text-center">{{ number_format($row->skor_akhir, 2) }}</td>
-                            <td class="text-center"><span class="badge bg-primary">{{ $row->skala_prioritas }}</span></td>
+                            <td class="text-center"><span class="badge bg-success">{{ $row->skala_prioritas }}</span></td>
                         </tr>
                         @empty
                         <tr><td colspan="7" class="text-center py-5">Tidak ada data.</td></tr>

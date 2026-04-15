@@ -11,11 +11,11 @@
             <div class="card-body d-flex justify-content-between align-items-center">
                 <div>
                     <h4 class="fw-bold mb-1">
-                        <i class="bx bx-file-find text-primary me-2"></i>
+                        <i class="bx bx-file-find text-primdarkary me-2"></i>
                         Laporan Analisis Kelayakan Fuzzy Sugeno
                     </h4>
                     <p class="text-muted mb-0">
-                        Subjek: <span class="badge bg-label-primary fs-6">{{ $hasil['cpcl']->nama_kelompok }}</span>
+                        Subjek: <span class="badge bg-label-dark fs-6">{{ $hasil['cpcl']->nama_kelompok }}</span>
                         <span class="badge bg-label-info ms-2">{{ $hasil['cpcl']->bidang ?? '-' }}</span>
                     </p>
                 </div>
@@ -23,7 +23,7 @@
                     <a href="{{ route('admin.perhitungan.index') }}" class="btn btn-outline-secondary">
                         <i class="bx bx-arrow-back me-1"></i> Kembali
                     </a>
-                    <button onclick="window.print()" class="btn btn-primary">
+                    <button onclick="window.print()" class="btn btn-success">
                         <i class="bx bx-printer me-1"></i> Cetak Laporan
                     </button>
                 </div>
@@ -34,7 +34,7 @@
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom py-3">
                 <h5 class="fw-bold mb-0">
-                    <span class="badge bg-primary me-2">Step 1</span>
+                    <span class="badge bg-success me-2">Step 1</span>
                     Fuzzifikasi — Visualisasi Kurva & Derajat Keanggotaan ($\mu$)
                 </h5>
             </div>
@@ -53,7 +53,7 @@
                                 {{-- KOLOM GRAFIK --}}
                                 <td class="p-3 bg-light">
                                     <div class="text-center mb-2">
-                                        <span class="fw-bold text-primary d-block">{{ $k['kode'] }} - {{ $k['nama'] }}</span>
+                                        <span class="fw-bold text-dark d-block">{{ $k['kode'] }} - {{ $k['nama'] }}</span>
                                         <small class="text-muted">Input: <strong>{{ $k['input'] }}</strong></small>
                                     </div>
                                     <div style="height: 180px; width: 100%;">
@@ -107,25 +107,25 @@
                     <tbody>
                         @foreach($hasil['rules'] as $rule)
                         <tr class="text-center">
-                            <td class="fw-bold text-primary">{{ $rule['rule_id'] }}</td>
+                            <td class="fw-bold text-dark">{{ $rule['rule_id'] }}</td>
                             <td class="text-start">
                                 @foreach($rule['anteceden'] as $i => $ant)
                                     @if($i > 0) <span class="badge bg-label-dark small">AND</span> @endif
-                                    <span class="badge bg-label-primary">{{ $ant['kriteria'] }} = {{ $ant['himpunan'] }}</span>
+                                    <span class="badge bg-label-success">{{ $ant['kriteria'] }} = {{ $ant['himpunan'] }}</span>
                                 @endforeach
                             </td>
                             <td><span class="badge bg-success">{{ number_format($rule['alpha'], 4) }}</span></td>
                             <td>{{ number_format($rule['z_rule'], 2) }}</td>
-                            <td class="fw-bold text-primary">{{ number_format($rule['alpha_x_z'], 4) }}</td>
+                            <td class="fw-bold text-dark">{{ number_format($rule['alpha_x_z'], 4) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="table-light fw-bold text-center">
                         <tr>
                             <td colspan="2" class="text-end text-uppercase">Total ($\Sigma$):</td>
-                            <td class="text-success">{{ number_format($hasil['sum_alpha'], 4) }}</td>
+                            <td class="text-dark">{{ number_format($hasil['sum_alpha'], 4) }}</td>
                             <td></td>
-                            <td class="text-primary">{{ number_format($hasil['sum_alpha_z'], 4) }}</td>
+                            <td class="text-dark">{{ number_format($hasil['sum_alpha_z'], 4) }}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -133,14 +133,14 @@
         </div>
 
         {{-- STEP 4: HASIL AKHIR --}}
-        <div class="card shadow-sm border-0 mb-4 border-top border-primary border-3">
+        <div class="card shadow-sm border-0 mb-4 border-top border-success border-3">
             <div class="card-body py-4">
                 <div class="row align-items-center">
                     <div class="col-md-5 text-center border-end">
                         <h6 class="text-uppercase fw-bold text-muted small">Defuzzifikasi (Sugeno)</h6>
                         <div class="py-2">
                             $$z^* = \frac{\sum (\alpha_i \cdot z_i)}{\sum \alpha_i} = \frac{ {{ number_format($hasil['sum_alpha_z'], 4) }} }{ {{ number_format($hasil['sum_alpha'], 4) }} }$$
-                            <h3 class="fw-bold text-primary mt-2">z = {{ number_format($hasil['z'], 4) }}</h3>
+                            <h3 class="fw-bold text-dark mt-2">z = {{ number_format($hasil['z'], 4) }}</h3>
                         </div>
                     </div>
                     <div class="col-md-7 ps-md-5">
@@ -203,7 +203,7 @@
                         labels: @json(array_column($k['himpunan'], 'nama')),
                         datasets: [{
                             data: @json(array_column($k['himpunan'], 'mu')),
-                            backgroundColor: '#696cff',
+                            backgroundColor: '#43a047',
                             borderRadius: 4,
                             barThickness: 30
                         }]
@@ -248,7 +248,7 @@
                             {
                                 label: '{{ $s['nama'] }}',
                                 data: {!! $pts !!},
-                                borderColor: ['#696cff', '#71dd37', '#ff3e1d', '#03c3ec'][{{ $idx }} % 4],
+                                borderColor: ['#2e7d32', '#66bb6a', '#c0ca33', '#8bc34a'][{{ $idx }} % 4],
                                 backgroundColor: 'transparent',
                                 borderWidth: 2, pointRadius: 0, tension: 0
                             },

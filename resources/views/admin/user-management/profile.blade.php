@@ -16,7 +16,7 @@
 
                 {{-- Avatar --}}
                 <div class="mb-3">
-                    <div class="avatar-lg bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto">
+                    <div class="avatar-lg bg-success text-white rounded-circle d-flex align-items-center justify-content-center mx-auto">
                         <h2 class="mb-0">{{ strtoupper(substr($user->name,0,1)) }}</h2>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                 {{-- Action --}}
                 <div class="mt-4 d-grid gap-2">
                     <a href="{{ route('admin.user-management.edit-profile', $user->id) }}" 
-                       class="btn btn-primary">
+                       class="btn btn-success">
                         Edit Profil
                     </a>
 

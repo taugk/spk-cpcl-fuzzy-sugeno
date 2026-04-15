@@ -10,7 +10,7 @@
     
     <a href="{{ route($dashRoute) }}" class="app-brand-link gap-2">
       <span class="app-brand-logo demo">
-        <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo" width="42">
+        <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo" width="80">
       </span>
       <div class="d-flex flex-column justify-content-center">
         <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="font-size: 1.2rem; line-height: 1.2;">SPK CPCL</span>

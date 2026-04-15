@@ -82,7 +82,7 @@
                         <div class="row justify-content-end">
                             <div class="col-sm-10">
                                 <a href="{{ route('admin.user-management.index') }}" class="btn btn-outline-secondary">Kembali</a>
-                                <button type="submit" class="btn btn-primary">Update Data</button>
+                                <button type="submit" class="btn btn-success">Update Data</button>
                             </div>
                         </div>
                     </form>

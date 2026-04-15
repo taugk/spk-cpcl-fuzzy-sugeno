@@ -15,7 +15,7 @@
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
                     <div class="btn-group">
-                        <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                        <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bx bx-export me-1"></i> Export
                         </button>
                         <ul class="dropdown-menu">
@@ -23,7 +23,7 @@
                             <li><a class="dropdown-item" href="#"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
                         </ul>
                     </div>
-                    <a href="{{ route('uptd.cpcl.create') }}" class="btn btn-primary">
+                    <a href="{{ route('uptd.cpcl.create') }}" class="btn btn-success">
                         <i class="bx bx-plus me-1"></i> Tambah CPCL
                     </a>
                 </div>
@@ -66,7 +66,7 @@
                         <div class="input-group input-group-sm w-75">
                             <span class="input-group-text"><i class="bx bx-search"></i></span>
                             <input type="text" name="search" class="form-control" placeholder="Cari Poktan / NIK Ketua..." value="{{ request('search') }}">
-                            <button class="btn btn-primary" type="submit">Cari</button>
+                            <button class="btn btn-success" type="submit">Cari</button>
                             @if(request()->anyFilled(['kecamatan', 'rencana_usaha', 'search']))
                                 <a href="{{ route('uptd.cpcl.index') }}" class="btn btn-outline-danger" title="Reset Filter">
                                     <i class="bx bx-x"></i>
@@ -111,7 +111,7 @@
                                     <span class="badge bg-label-secondary text-wrap text-start" style="max-width: 150px; line-height: 1.4;">
                                         @if(isset($row->alamat->desa) || isset($row->alamat->kecamatan))
                                         <small class="text-muted" style="font-size: 0.75rem;">
-                                            <i class="bx bx-map text-primary"></i> 
+                                            
                                             {{ $row->alamat->desa ?? '-' }}, {{ $row->alamat->kecamatan ?? '-' }}
                                         </small>
                                     @endif
@@ -120,7 +120,7 @@
                                     
 
                                     @if(isset($row->latitude) && isset($row->longitude))
-                                        <a href="https://maps.google.com/?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-primary small mt-1" style="width: max-content;">
+                                        <a href="https://maps.google.com/?q={{ $row->latitude }},{{ $row->longitude }}" target="_blank" class="badge bg-label-success small mt-1" style="width: max-content;">
                                             <i class="bx bx-map-pin me-1"></i> Lihat Peta
                                         </a>
                                     @endif
@@ -128,7 +128,7 @@
                             </td>
 
                             <td>
-                                <span class="fw-semibold text-primary d-block">{{ $row->rencana_usaha }}</span>
+                                <span class="fw-semibold text-dark d-block">{{ $row->rencana_usaha }}</span>
                                 <small class="badge bg-label-warning text-uppercase" style="font-size: 0.65rem;">
                                     {{ $row->bidang }}
                                 </small>
@@ -136,8 +136,8 @@
 
                             <td>
                                 <div class="d-flex flex-column gap-1" style="font-size: 0.85rem;">
-                                    <span><i class="bx bx-area me-1 text-primary"></i> <strong>{{ $row->luas_lahan }}</strong> Ha</span>
-                                    <span><i class="bx bx-trending-up me-1 text-success"></i> <strong>{{ $row->hasil_panen }}</strong> T/Ha</span>
+                                    <span><i class="bx bx-area me-1 text-dark"></i> <strong>{{ $row->luas_lahan }}</strong> Ha</span>
+                                    <span><i class="bx bx-trending-up me-1 text-dark"></i> <strong>{{ $row->hasil_panen }}</strong> T/Ha</span>
                                     <span class="text-capitalize"><i class="bx bx-lock-alt me-1 text-warning"></i> {{ $row->status_lahan }}</span>
                                 </div>
                             </td>
@@ -229,7 +229,7 @@
                 <div id="previewContent" style="height: 70vh; overflow: auto;"></div>
             </div>
             <div class="modal-footer">
-                <a href="javascript:void(0)" id="downloadBtn" class="btn btn-outline-primary btn-sm">
+                <a href="javascript:void(0)" id="downloadBtn" class="btn btn-outline-success btn-sm">
                     <i class="bx bx-download me-1"></i> Download File
                 </a>
                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
@@ -247,7 +247,7 @@
         const modalTitle = document.getElementById('modalTitle');
         const downloadBtn = document.getElementById('downloadBtn');
         
-        previewContent.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" role="status"></div></div>';
+        previewContent.innerHTML = '<div class="d-flex justify-content-center p-5"><div class="spinner-border text-dark" role="status"></div></div>';
         modalTitle.innerText = title;
 
         downloadBtn.onclick = function(e) {

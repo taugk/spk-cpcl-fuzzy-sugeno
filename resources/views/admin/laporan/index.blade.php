@@ -40,7 +40,7 @@
                     </select>
                 </div>
                 <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary w-100">
+                    <button type="submit" class="btn btn-success w-100">
                         <i class="bx bx-filter-alt me-1"></i> Filter
                     </button>
                     <a href="{{ route('admin.laporan.index') }}" class="btn btn-outline-secondary">
@@ -54,7 +54,7 @@
     <div class="card printable-area">
         <div class="d-none d-print-block mb-4">
             <div class="d-flex align-items-center border-bottom pb-3">
-                <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo" width="60" class="me-3">
+                <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo" width="80" class="me-3">
                 <div>
                     <h4 class="mb-0 fw-bold text-dark">LAPORAN HASIL PENILAIAN CPCL</h4>
                     <p class="mb-0 text-muted">Sistem Pendukung Keputusan Dinas Pertanian Kabupaten Kuningan</p>
@@ -65,7 +65,7 @@
 
         <div class="card-header d-flex justify-content-between align-items-center border-bottom mb-3 py-3 no-print">
             <div class="d-flex align-items-center">
-                <img src="{{ asset('assets/img/icons/brands/logo-dinas-pertanian.png') }}" alt="Logo" width="60" class="me-3">
+                <img src="{{ asset('assets/img/icons/brands/logo.svg') }}" alt="Logo" width="80" class="me-3">
                 <div>
                     <h4 class="mb-0 fw-bold text-dark">LAPORAN HASIL PENILAIAN CPCL</h4>
                     <p class="mb-0 text-muted">Sistem Pendukung Keputusan Dinas Pertanian Kabupaten Kuningan</p>
@@ -103,7 +103,7 @@
                             <td>{{ $row->cpcl->lokasi }}</td>
                             <td>{{ $row->cpcl->bidang }}</td>
                             <td class="text-center">{{ $row->cpcl->luas_lahan }} Ha</td>
-                            <td class="text-center fw-bold text-primary">{{ number_format($row->skor_akhir, 2) }}%</td>
+                            <td class="text-center fw-bold text-dark">{{ number_format($row->skor_akhir, 2) }}%</td>
                             <td class="text-center">
                                 @php
                                     $badgeClass = match($row->skala_prioritas) {

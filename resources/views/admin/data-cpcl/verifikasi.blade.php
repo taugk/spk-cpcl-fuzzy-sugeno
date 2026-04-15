@@ -8,9 +8,11 @@
 
 <style>
     :root {
-        --primary-blue: #0b3d91;
-        --soft-bg: #f8faff;
-        --border-color: #eef2f7;
+        --primary-green: #2e7d32;     /* Hijau utama */
+        --green-soft: #e8f5e9;       /* Background lembut */
+        --green-light: #66bb6a;      /* Aksen */
+        --green-dark: #1b5e20;       /* Judul */
+        --border-color: #e0e0e0;
     }
 
     .card-modern {
@@ -44,7 +46,7 @@
     .title-text {
         font-size: 14px;
         font-weight: 800;
-        color: var(--primary-blue);
+        color: var(--primary-green);
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
@@ -148,7 +150,7 @@
                 <a href="{{ route('admin.cpcl.index') }}" class="btn btn-sm btn-outline-secondary shadow-sm px-3">
                     <i class="bi bi-arrow-left"></i> Kembali
                 </a>
-                <span class="badge bg-label-primary p-2 px-3 text-uppercase fw-bold shadow-sm">ID: #CPCL-{{ $cpcl->id }}</span>
+                <span class="badge bg-label-success p-2 px-3 text-uppercase fw-bold shadow-sm">ID: #CPCL-{{ $cpcl->id }}</span>
             </div>
         </div>
 
@@ -161,7 +163,7 @@
                     
                     <div class="card card-modern">
                         <div class="card-header-modern">
-                            <div class="section-icon bg-label-primary text-primary shadow-sm">
+                            <div class="section-icon bg-label-success text-primary shadow-sm">
                                 <i class="bi bi-people-fill"></i>
                             </div>
                             <span class="title-text">Profil Kelompok & Usulan</span>
@@ -169,7 +171,7 @@
                         <div class="info-grid">
                             <div class="data-item">
                                 <span class="data-label">Nama Kelompok Tani</span>
-                                <div class="data-value text-primary fw-bold">{{ $cpcl->nama_kelompok }}</div>
+                                <div class="data-value text-dark fw-bold">{{ $cpcl->nama_kelompok }}</div>
                             </div>
                             <div class="data-item">
                                 <span class="data-label">Rencana Usaha</span>
@@ -198,7 +200,7 @@
                         <div class="tile-container">
                             <div class="tile-item tile-blue">
                                 <span class="data-label">Luas Lahan</span>
-                                <div class="data-value text-primary">{{ number_format($cpcl->luas_lahan, 2) }} Ha</div>
+                                <div class="data-value text-dark">{{ number_format($cpcl->luas_lahan, 2) }} Ha</div>
                             </div>
                             <div class="tile-item tile-green">
                                 <span class="data-label">Hasil Panen</span>
@@ -233,12 +235,12 @@
                     </div>
 
                     {{-- Penilaian Kriteria --}}
-                    <div class="card card-modern border-primary border" style="border-width: 2px !important;">
-                        <div class="card-header-modern bg-label-primary">
-                            <div class="section-icon bg-primary text-white shadow-sm">
+                    <div class="card card-modern border-success border" style="border-width: 2px !important;">
+                        <div class="card-header-modern bg-label-success">
+                            <div class="section-icon bg-success text-white shadow-sm">
                                 <i class="bi bi-bar-chart-line-fill"></i>
                             </div>
-                            <span class="title-text text-primary">Verifikasi Penilaian Kriteria</span>
+                            <span class="title-text text-dark">Verifikasi Penilaian Kriteria</span>
                         </div>
 
                         <div class="p-4 pt-3">
@@ -354,9 +356,9 @@
                         </div>
                     </div>
 
-                    <div class="card card-modern border-top border-primary border-5 position-sticky" style="top: 20px;">
+                    <div class="card card-modern border-top border-success border-5 position-sticky" style="top: 20px;">
                         <div class="card-header-modern border-bottom-0 pb-0">
-                            <div class="section-icon bg-label-primary text-primary shadow-sm">
+                            <div class="section-icon bg-label-success text-primary shadow-sm">
                                 <i class="bi bi-shield-check"></i>
                             </div>
                             <span class="title-text">Form Keputusan</span>
@@ -375,7 +377,7 @@
                                 <label class="form-label small fw-bold">Catatan Verifikator</label>
                                 <textarea name="catatan_verifikator" class="form-control" rows="3" placeholder="Masukkan alasan atau instruksi revisi..."></textarea>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow">
+                            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow">
                                 <i class="bi bi-save me-2"></i> SIMPAN KEPUTUSAN
                             </button>
                         </div>

@@ -10,7 +10,7 @@
                 <h5 class="card-title mb-3 mb-md-0">Data Kriteria</h5>
                 
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahKriteria">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalTambahKriteria">
                         <i class="bx bx-plus me-1"></i> <span class="d-none d-sm-inline-block">Tambah Kriteria</span>
                     </button>
                 </div>
@@ -30,12 +30,12 @@
                         @forelse ($kriteria as $index => $item)
                         <tr>
                             <td class="text-center">{{ $index + 1 }}</td>
-                            <td><span class="badge bg-label-primary">C{{ $index + 1 }}</span></td>
+                            <td><span class="badge bg-label-success">C{{ $index + 1 }}</span></td>
                             <td><strong>{{ $item->nama_kriteria }}</strong></td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-2">
                                     {{-- Tombol Edit --}}
-                                    <button type="button" class="btn btn-icon btn-outline-primary btn-sm btn-edit" 
+                                    <button type="button" class="btn btn-icon btn-outline-success btn-sm btn-edit" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#modalEditKriteria"
                                             data-id="{{ $item->id }}"
@@ -93,7 +93,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <button type="submit" class="btn btn-success">Simpan</button>
                     </div>
                 </form>
             </div>
@@ -126,7 +126,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <button type="submit" class="btn btn-success">Simpan Perubahan</button>
                     </div>
                 </form>
             </div>

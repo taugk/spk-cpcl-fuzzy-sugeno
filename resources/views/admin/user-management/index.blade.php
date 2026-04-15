@@ -12,7 +12,7 @@
         <h5 class="card-title mb-3 mb-md-0">Data Pengguna</h5>
         
         <div class="d-flex gap-2">
-          <a href="{{ route('admin.user-management.create') }}" class="btn btn-primary">
+          <a href="{{ route('admin.user-management.create') }}" class="btn btn-success">
             <i class="bx bx-plus me-1"></i> 
             <span class="d-none d-sm-inline-block">Tambah User</span>
           </a>
@@ -41,7 +41,7 @@
                 <div class="d-flex justify-content-start align-items-center">
                   <div class="avatar-wrapper">
                     <div class="avatar avatar-sm me-3">
-                      <span class="avatar-initial rounded-circle bg-label-primary">
+                      <span class="avatar-initial rounded-circle bg-label-success">
                         {{ strtoupper(substr($user->name, 0, 2)) }}
                       </span>
                     </div>
@@ -56,7 +56,7 @@
               <td>{{ $user->username }}</td>
 
               <td>
-                <span class="badge {{ $user->role == 'admin' ? 'bg-label-primary' : 'bg-label-info' }}">
+                <span class="badge {{ $user->role == 'admin' ? 'bg-label-success' : 'bg-label-info' }}">
                     {{ strtoupper($user->role) }}
                 </span>
               </td>
@@ -75,7 +75,7 @@
 
               <td>
                 <div class="d-flex align-items-center">
-                    <a href="{{ route('admin.user-management.edit', $user->id) }}" class="text-primary me-3" title="Edit">
+                    <a href="{{ route('admin.user-management.edit', $user->id) }}" class="text-dark me-3" title="Edit">
                         <i class="bx bx-edit-alt fs-5"></i>
                     </a>
 

@@ -31,7 +31,7 @@
                     <div class="card-body text-center">
                         <div class="mx-auto mb-3">
                             <div class="avatar avatar-xl d-inline-block">
-                                <span class="avatar-initial rounded-circle bg-label-primary shadow-sm">
+                                <span class="avatar-initial rounded-circle bg-label-success shadow-sm">
                                     <i class="bx bx-group fs-1"></i>
                                 </span>
                             </div>
@@ -72,7 +72,7 @@
                         <h6 class="text-muted text-uppercase small fw-bold mb-3 border-bottom pb-2">Kontak Utama & Lokasi</h6>
                         <div class="d-flex align-items-center mb-3">
                             <div class="badge bg-label-secondary p-2 rounded me-3">
-                                <i class="bx bx-user fs-4 text-primary"></i>
+                                <i class="bx bx-user fs-4 text-dark"></i>
                             </div>
                             <div>
                                 <p class="mb-0 fw-semibold text-dark">{{ $cpcl->nama_ketua }}</p>
@@ -97,7 +97,7 @@
                 {{-- BERKAS PENDUKUNG --}}
                 <div class="card border-0 shadow-sm">
                     <div class="card-header border-bottom py-3 d-flex align-items-center">
-                        <i class="bx bx-file-blank text-primary me-2"></i>
+                        <i class="bx bx-file-blank text-dark me-2"></i>
                         <h6 class="mb-0 fw-bold">Berkas Pendukung</h6>
                     </div>
                     <div class="card-body pt-2">
@@ -135,7 +135,7 @@
             <div class="col-xl-8 col-lg-7 col-md-7">
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-header border-bottom bg-white py-3">
-                        <h5 class="card-title mb-0 fw-bold"><i class="bx bx-detail me-2 text-primary"></i>Rincian Teknis Usulan</h5>
+                        <h5 class="card-title mb-0 fw-bold"><i class="bx bx-detail me-2 text-dark"></i>Rincian Teknis Usulan</h5>
                     </div>
                     <div class="card-body pt-4">
                         <div class="row g-4 mb-4">
@@ -145,7 +145,7 @@
                             </div>
                             <div class="col-md-6 ps-md-4">
                                 <label class="text-muted small text-uppercase fw-bold mb-1 d-block">Bidang Komoditas</label>
-                                <p class="fw-bold mb-0 text-primary">{{ $cpcl->bidang }}</p>
+                                <p class="fw-bold mb-0 text-dark">{{ $cpcl->bidang }}</p>
                             </div>
                         </div>
                         <div class="row g-4 border-top pt-4">
@@ -180,7 +180,7 @@
                             <div class="text-end">
                                 <p class="mb-1 small fw-bold">{{ $cpcl->latitude }}, {{ $cpcl->longitude }}</p>
                                 {{-- Memperbaiki link ke Google Maps --}}
-                                <a href="https://www.google.com/maps?q={{ $cpcl->latitude }},{{ $cpcl->longitude }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <a href="https://www.google.com/maps?q={{ $cpcl->latitude }},{{ $cpcl->longitude }}" target="_blank" class="btn btn-sm btn-outline-success rounded-pill">
                                     <i class="bx bx-directions me-1"></i> Navigasi Maps
                                 </a>
                             </div>
@@ -192,10 +192,10 @@
                 </div>
 
                 {{-- VERIFICATOR NOTES --}}
-                <div class="card border-0 shadow-sm border-start {{ $status === 'perlu_perbaikan' ? 'border-warning' : 'border-primary' }} border-5">
+                <div class="card border-0 shadow-sm border-start {{ $status === 'perlu_perbaikan' ? 'border-warning' : 'border-success' }} border-5">
                     <div class="card-body py-4">
                         <div class="d-flex">
-                            <i class="bx {{ $status === 'perlu_perbaikan' ? 'bx-error-circle text-warning' : 'bx-message-dots text-primary' }} fs-3 me-3"></i>
+                            <i class="bx {{ $status === 'perlu_perbaikan' ? 'bx-error-circle text-warning' : 'bx-message-dots text-dark' }} fs-3 me-3"></i>
                             <div>
                                 <h6 class="fw-bold mb-1">Catatan Verifikator</h6>
                                 <p class="mb-0 text-dark small lh-base">
@@ -233,7 +233,7 @@
                 
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-label-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
-                    <a id="downloadBtn" class="btn btn-primary btn-sm shadow-sm" download>
+                    <a id="downloadBtn" class="btn btn-success btn-sm shadow-sm" download>
                         <i class="bx bx-download me-1"></i> Unduh Berkas
                     </a>
                 </div>

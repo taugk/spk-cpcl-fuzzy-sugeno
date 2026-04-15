@@ -4,14 +4,14 @@
         <div class="modal-content">
             <form action="{{ route('admin.sub-kriteria.store') }}" method="POST">
                 @csrf
-                <div class="modal-header bg-primary">
+                <div class="modal-header bg-success">
                     <h5 class="modal-title text-white">Tambah Sub-Kriteria (Himpunan Fuzzy)</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="modal-body">
                     {{-- TUTORIAL NOTES MODERN --}}
-                    <div class="card bg-label-primary border-0 mb-4 shadow-none">
+                    <div class="card bg-label-success border-0 mb-4 shadow-none">
                         <div class="card-body">
                             <h6 class="fw-bold d-flex align-items-center mb-3">
                                 <i class="bx bx-book-reader fs-4 me-2"></i> Tutorial Input Parameter
@@ -19,12 +19,12 @@
                             <div class="row g-3 text-dark">
                                 <div class="col-md-6">
                                     <div class="p-3 rounded bg-white shadow-sm h-100 border">
-                                        <div class="fw-bold text-primary mb-2 small text-uppercase">1. Kriteria Kontinu (Angka)</div>
+                                        <div class="fw-bold text-dark mb-2 small text-uppercase">1. Kriteria Kontinu (Angka)</div>
                                         <p class="small mb-2">Tentukan rentang nilai menggunakan parameter <span class="badge bg-label-dark">a, b, c, d</span> :</p>
                                         <ul class="small ps-3 mb-0 text-muted">
-                                            <li><span class="fw-bold">Bahu Kiri:</span> Isi <span class="text-primary">c & d</span> (cth: Pendek/Kecil).</li>
-                                            <li><span class="fw-bold">Trapesium:</span> Isi <span class="text-primary">semua</span> (cth: Sedang/Menengah).</li>
-                                            <li><span class="fw-bold">Bahu Kanan:</span> Isi <span class="text-primary">a & b</span> (cth: Tinggi/Luas).</li>
+                                            <li><span class="fw-bold">Bahu Kiri:</span> Isi <span class="text-dark">c & d</span> (cth: Pendek/Kecil).</li>
+                                            <li><span class="fw-bold">Trapesium:</span> Isi <span class="text-dark">semua</span> (cth: Sedang/Menengah).</li>
+                                            <li><span class="fw-bold">Bahu Kanan:</span> Isi <span class="text-dark">a & b</span> (cth: Tinggi/Luas).</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -45,7 +45,7 @@
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Pilih Kriteria Induk</label>
-                        <select name="kriteria_id" class="form-select select-kriteria border-primary" required onchange="ubahJenisKriteria(this, 'wrapper-sub-tambah')">
+                        <select name="kriteria_id" class="form-select select-kriteria border-success" required onchange="ubahJenisKriteria(this, 'wrapper-sub-tambah')">
                             <option value="" data-jenis="">-- Klik untuk memilih kriteria --</option>
                             @foreach($data as $k)
                                 <option value="{{ $k->id }}" data-jenis="{{ $k->jenis_kriteria }}">{{ $k->nama_kriteria }} ({{ ucfirst($k->jenis_kriteria) }})</option>
@@ -56,14 +56,14 @@
                     {{-- AREA INPUT DINAMIS --}}
                     <div id="wrapper-sub-tambah"></div>
 
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 d-none shadow-sm" id="btn-tambah-baris-add" onclick="tambahBaris('wrapper-sub-tambah')">
+                    <button type="button" class="btn btn-sm btn-outline-success mt-2 d-none shadow-sm" id="btn-tambah-baris-add" onclick="tambahBaris('wrapper-sub-tambah')">
                         <i class="bx bx-plus-circle me-1"></i> Tambah Baris Himpunan
                     </button>
                 </div>
 
                 <div class="modal-footer border-top">
                     <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn btn-primary shadow">Simpan Data</button>
+                    <button type="submit" class="btn btn-success shadow">Simpan Data</button>
                 </div>
             </form>
         </div>
@@ -97,7 +97,7 @@
 
                     <div id="wrapper-sub-edit"></div>
 
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 shadow-sm" onclick="tambahBaris('wrapper-sub-edit')">
+                    <button type="button" class="btn btn-sm btn-outline-success mt-2 shadow-sm" onclick="tambahBaris('wrapper-sub-edit')">
                         <i class="bx bx-plus-circle me-1"></i> Tambah Baris Himpunan
                     </button>
                 </div>

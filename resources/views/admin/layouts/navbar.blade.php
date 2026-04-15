@@ -26,7 +26,7 @@
             <li class="nav-item navbar-dropdown dropdown-user dropdown">
                 <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
                     <div class="avatar avatar-online">
-                        <span class="avatar-initial rounded-circle bg-label-primary">
+                        <span class="avatar-initial rounded-circle" style="background-color: #66bb6a; color: white;">
                             {{ substr(Auth::user()->name ?? 'U', 0, 1) }}
                         </span>
                     </div>

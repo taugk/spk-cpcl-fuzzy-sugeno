@@ -12,7 +12,7 @@
         <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-uppercase mb-1">
-                    <i class="bx bx-calculator me-2 text-primary"></i>Perhitungan & Ranking Kelayakan CPCL
+                    <i class="bx bx-calculator me-2 text-dark"></i>Perhitungan & Ranking Kelayakan CPCL
                 </h4>
                 <p class="text-muted mb-0">
                     Hasil Analisis Metode <strong>Fuzzy Sugeno Orde Nol</strong> Tahun Anggaran {{ $periode }}
@@ -28,16 +28,16 @@
         {{-- ==========================================
              PANEL KONTROL (FILTER & PROSES)
              ========================================== --}}
-        <div class="card shadow-sm mb-4 border-top border-primary border-3 no-print">
+        <div class="card shadow-sm mb-4 border-top border-success border-3 no-print">
             <div class="card-body">
                 <div class="row g-4 align-items-center">
                     {{-- Filter Periode --}}
                     <div class="col-md-4 border-end">
                         <label class="form-label fw-bold text-dark small text-uppercase">Pilih Periode Laporan</label>
                         <form method="GET" action="{{ route('admin.perhitungan.index') }}">
-                            <div class="input-group border-primary">
+                            <div class="input-group border-success">
                                 <span class="input-group-text bg-white"><i class="bx bx-calendar"></i></span>
-                                <select name="periode" class="form-select border-primary" onchange="this.form.submit()">
+                                <select name="periode" class="form-select border-success" onchange="this.form.submit()">
                                     @foreach($periodeList as $p)
                                         <option value="{{ $p }}" {{ $periode == $p ? 'selected' : '' }}>
                                             Tahun Anggaran {{ $p }}
@@ -55,7 +55,7 @@
                             @csrf
                             <input type="hidden" name="periode" value="{{ $periode }}">
                             <div class="d-flex align-items-center gap-3">
-                                <button type="submit" class="btn btn-primary px-4 shadow-sm" {{ $totalTerverifikasi == 0 ? 'disabled' : '' }}>
+                                <button type="submit" class="btn btn-success px-4 shadow-sm" {{ $totalTerverifikasi == 0 ? 'disabled' : '' }}>
                                     <i class="bx bx-sync me-1"></i> Jalankan Kalkulasi Ranking
                                 </button>
                                 <div class="vr"></div>
@@ -80,7 +80,7 @@
                 <h6 class="mb-0 text-white fw-bold text-uppercase">
                     Daftar Prioritas Penerima Manfaat CPCL
                 </h6>
-                <span class="badge bg-primary text-uppercase">Dokumen Hasil Sistem</span>
+                <span class="badge bg-success text-uppercase">Dokumen Hasil Sistem</span>
             </div>
 
             @if($hasilRanking->isEmpty())
@@ -144,7 +144,7 @@
                                     </td>
                                     <td class="text-center no-print">
                                         <a href="{{ route('admin.perhitungan.detail', $h->cpcl_id) }}" 
-                                           class="btn btn-sm btn-outline-primary shadow-sm"
+                                           class="btn btn-sm btn-outline-success shadow-sm"
                                            data-bs-toggle="tooltip" title="Detail Perhitungan">
                                             <i class="bx bx-list-check me-1"></i> Detail
                                         </a>
@@ -162,9 +162,9 @@
              ========================================== --}}
         <div class="row mt-4 no-print">
             <div class="col-md-7">
-                <div class="card border-0 shadow-sm border-start border-primary border-3">
+                <div class="card border-0 shadow-sm border-start border-success border-3">
                     <div class="card-body p-3">
-                        <h6 class="fw-bold mb-3"><i class="bx bx-info-square me-2 text-primary"></i>Keterangan Klasifikasi Prioritas</h6>
+                        <h6 class="fw-bold mb-3"><i class="bx bx-info-square me-2 text-dark"></i>Keterangan Klasifikasi Prioritas</h6>
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered small text-center mb-0">
                                 <thead class="table-light text-uppercase">
