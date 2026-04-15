@@ -157,19 +157,42 @@
                                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
                             </td>
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
-                                        <i class="bx bx-show"></i>
-                                    </a>
-                                    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+    <div class="d-flex justify-content-center gap-1">
+
+        {{-- VERIFIKASI --}}
+        <a href="{{ route('admin.cpcl.verify', $row->id) }}" 
+           class="btn btn-sm btn-outline-success"
+           title="Verifikasi Data">
+            <i class="bx bx-shield-check me-1"></i> Verifikasi
+        </a>
+
+        {{-- DETAIL --}}
+        <a href="{{ route('admin.cpcl.show', $row->id) }}" 
+           class="btn btn-icon btn-sm btn-outline-info"
+           title="Lihat Detail">
+            <i class="bx bx-show"></i>
+        </a>
+
+        {{-- EDIT --}}
+        <a href="{{ route('admin.cpcl.edit', $row->id) }}" 
+           class="btn btn-icon btn-sm btn-outline-primary"
+           title="Edit Data">
+            <i class="bx bx-pencil"></i>
+        </a>
+
+        {{-- HAPUS --}}
+        <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+            @csrf
+            @method('DELETE')
+            <button type="submit" 
+                class="btn btn-icon btn-sm btn-outline-danger btn-delete-confirm"
+                title="Hapus Data">
+                <i class="bx bx-trash"></i>
+            </button>
+        </form>
+
+    </div>
+</td>
                         </tr>
                         @empty
                         <tr>

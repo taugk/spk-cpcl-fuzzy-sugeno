@@ -346,7 +346,7 @@
                     </div>
 
                     <div class="card-footer bg-light d-flex justify-content-between align-items-center">
-                        <a href="{{ route('uptd.cpcl.index') }}" class="btn btn-label-secondary">Batal</a>
+                        <a href="{{ route('admin.cpcl.index') }}" class="btn btn-label-secondary">Batal</a>
 
                         <button type="submit" class="btn btn-primary btn-lg px-4 shadow">
                             <i class="bx bx-save me-1"></i>

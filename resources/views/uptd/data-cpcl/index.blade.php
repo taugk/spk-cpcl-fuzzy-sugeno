@@ -161,6 +161,7 @@
                                     <a href="{{ route('uptd.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
                                         <i class="bx bx-show"></i>
                                     </a>
+                                    
                                     <form action="{{ route('uptd.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
