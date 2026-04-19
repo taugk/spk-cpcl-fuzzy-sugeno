@@ -31,7 +31,7 @@
     .system-title {
         font-size: 1.3rem;
         font-weight: 800;
-        color: #696cff; 
+        color: #66bb6a; 
         margin-bottom: 5px;
     }
 </style>
@@ -111,7 +111,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <button class="btn btn-primary d-grid w-100" type="submit">
+                            <button class="btn btn-success d-grid w-100" type="submit">
                                 <i class="bx bx-log-in-circle me-2"></i> MASUK APLIKASI
                             </button>
                         </div>
