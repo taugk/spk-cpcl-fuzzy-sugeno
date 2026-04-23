@@ -14,75 +14,99 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     public function index()
-    {
-        // 1. Statistik Dasar
-        $totalCpcl = Cpcl::count();
-        $countBaru = Cpcl::where('status', 'baru')->count();
-        $countTerverifikasi = Cpcl::where('status', 'terverifikasi')->count();
-        $countDitolak = Cpcl::where('status', 'ditolak')->count();
+{
+    $user = auth()->user();
+    $role = $user->role;
 
-        // 2. Data Grafik Status (Rasio Verifikasi)
-        $statusLabels = ['Baru', 'Terverifikasi', 'Ditolak'];
-        $statusData = [$countBaru, $countTerverifikasi, $countDitolak];
+    // 1. Inisialisasi Query Dasar dengan Filter Bidang
+    // Jika admin (super), tampilkan semua. Jika admin_bidang, filter berdasarkan mapping.
+    $cpclQuery = Cpcl::query();
+    $fuzzyQuery = HasilFuzzy::query();
 
-        // 3. Statistik Perhitungan Fuzzy & Top 5
-        $countRanking = HasilFuzzy::count();
-        $avgSkor = HasilFuzzy::avg('skor_akhir') ?? 0;
-        
-        $topRank = HasilFuzzy::with('cpcl')
-            ->orderBy('skor_akhir', 'desc')
-            ->limit(5)
-            ->get();
-
-        $topSkorLabels = $topRank->map(fn($item) => $item->cpcl->nama_kelompok ?? 'Anonim');
-        $topSkorData = $topRank->pluck('skor_akhir');
-
-        // 4. Data Grafik Wilayah (Kecamatan)
-        $dataLokasi = Cpcl::leftJoin('alamat', 'cpcl.alamat_id', '=', 'alamat.id')
-            ->select('alamat.kecamatan', DB::raw('count(cpcl.id) as total'))
-            ->whereNotNull('alamat.kecamatan')
-            ->groupBy('alamat.kecamatan')
-            ->orderBy('total', 'desc')
-            ->limit(10)
-            ->get();
-
-        $lokasiLabels = $dataLokasi->pluck('kecamatan');
-        $lokasiData = $dataLokasi->pluck('total');
-
-        // 5. Data Grafik Bidang
-        $dataBidang = Cpcl::select('bidang', DB::raw('count(*) as total'))
-            ->groupBy('bidang')
-            ->get();
-        $bidangLabels = $dataBidang->pluck('bidang');
-        $bidangData = $dataBidang->pluck('total');
-
-        // 6. Data Grafik Tren (Registrasi 6 Bulan Terakhir)
-        $trenRegistrasi = Cpcl::select(
-        DB::raw('DATE_FORMAT(created_at, "%b %Y") as bulan'),
-        DB::raw('count(*) as total')
-    )
-    ->groupBy(DB::raw('DATE_FORMAT(created_at, "%b %Y")')) // Gunakan format yang sama
-    ->orderBy(DB::raw('MIN(created_at)'), 'asc') // Gunakan MIN agar tidak error
-    ->limit(6)
-    ->get();
-
-$trenLabels = $trenRegistrasi->pluck('bulan');
-$trenData = $trenRegistrasi->pluck('total');
-
-        // 7. Metadata
-        $jmlKriteria = Kriteria::count();
-        $jmlSubKriteria = SubKriteria::count();
-        $jmlKecamatanTercover = Alamat::distinct('kecamatan')->count();
-
-        return view('admin.dashboard.index', compact(
-            'totalCpcl', 'countBaru', 'countTerverifikasi', 'countDitolak',
-            'countRanking', 'avgSkor', 'topRank',
-            'lokasiLabels', 'lokasiData',
-            'bidangLabels', 'bidangData',
-            'statusLabels', 'statusData',
-            'topSkorLabels', 'topSkorData',
-            'trenLabels', 'trenData',
-            'jmlKriteria', 'jmlSubKriteria', 'jmlKecamatanTercover'
-        ));
+    if ($role === 'admin_pangan') {
+        $cpclQuery->where('bidang', 'pangan');
+        $fuzzyQuery->whereHas('cpcl', fn($q) => $q->where('bidang', 'pangan'));
+    } elseif ($role === 'admin_hartibun') {
+        $cpclQuery->where('bidang', 'hartibun');
+        $fuzzyQuery->whereHas('cpcl', fn($q) => $q->where('bidang', 'hartibun'));
     }
+
+    // 2. Statistik Dasar (Filtered)
+    $totalCpcl = (clone $cpclQuery)->count();
+    $countBaru = (clone $cpclQuery)->where('status', 'baru')->count();
+    $countTerverifikasi = (clone $cpclQuery)->where('status', 'terverifikasi')->count();
+    $countDitolak = (clone $cpclQuery)->where('status', 'ditolak')->count();
+
+    // 3. Data Grafik Status (Rasio Verifikasi)
+    $statusLabels = ['Baru', 'Terverifikasi', 'Ditolak'];
+    $statusData = [$countBaru, $countTerverifikasi, $countDitolak];
+
+    // 4. Statistik Perhitungan Fuzzy & Top 5 (Filtered)
+    $countRanking = (clone $fuzzyQuery)->count();
+    $avgSkor = (clone $fuzzyQuery)->avg('skor_akhir') ?? 0;
+    
+    $topRank = (clone $fuzzyQuery)->with('cpcl')
+        ->orderBy('skor_akhir', 'desc')
+        ->limit(5)
+        ->get();
+
+    $topSkorLabels = $topRank->map(fn($item) => $item->cpcl->nama_kelompok ?? 'Anonim');
+    $topSkorData = $topRank->pluck('skor_akhir');
+
+    // 5. Data Grafik Wilayah (Filtered)
+    $dataLokasi = (clone $cpclQuery)
+        ->leftJoin('alamat', 'cpcl.alamat_id', '=', 'alamat.id')
+        ->select('alamat.kecamatan', DB::raw('count(cpcl.id) as total'))
+        ->whereNotNull('alamat.kecamatan')
+        ->groupBy('alamat.kecamatan')
+        ->orderBy('total', 'desc')
+        ->limit(10)
+        ->get();
+
+    $lokasiLabels = $dataLokasi->pluck('kecamatan');
+    $lokasiData = $dataLokasi->pluck('total');
+
+    // 6. Data Grafik Bidang (Hanya relevan untuk Super Admin)
+    $dataBidang = (clone $cpclQuery)
+        ->select('bidang', DB::raw('count(*) as total'))
+        ->groupBy('bidang')
+        ->get();
+    $bidangLabels = $dataBidang->pluck('bidang');
+    $bidangData = $dataBidang->pluck('total');
+
+    // 7. Data Grafik Tren (Filtered)
+    $trenRegistrasi = (clone $cpclQuery)
+        ->select(
+            DB::raw('DATE_FORMAT(created_at, "%b %Y") as bulan'),
+            DB::raw('count(*) as total')
+        )
+        ->groupBy(DB::raw('DATE_FORMAT(created_at, "%b %Y")'))
+        ->orderBy(DB::raw('MIN(created_at)'), 'asc')
+        ->limit(6)
+        ->get();
+
+    $trenLabels = $trenRegistrasi->pluck('bulan');
+    $trenData = $trenRegistrasi->pluck('total');
+
+    // 8. Metadata
+    $jmlKriteria = Kriteria::count();
+    $jmlSubKriteria = SubKriteria::count();
+    
+    // Filter kecamatan tercover sesuai data yang difilter
+    $jmlKecamatanTercover = Alamat::whereHas('cpcl', function($q) use ($role) {
+        if ($role === 'admin_pangan') $q->where('bidang', 'pangan');
+        if ($role === 'admin_hartibun') $q->where('bidang', 'hartibun');
+    })->distinct('kecamatan')->count();
+
+    return view('admin.dashboard.index', compact(
+        'totalCpcl', 'countBaru', 'countTerverifikasi', 'countDitolak',
+        'countRanking', 'avgSkor', 'topRank',
+        'lokasiLabels', 'lokasiData',
+        'bidangLabels', 'bidangData',
+        'statusLabels', 'statusData',
+        'topSkorLabels', 'topSkorData',
+        'trenLabels', 'trenData',
+        'jmlKriteria', 'jmlSubKriteria', 'jmlKecamatanTercover'
+    ));
+}
 }

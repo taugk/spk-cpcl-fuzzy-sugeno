@@ -156,21 +156,25 @@
                                 @endphp
                                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
                             </td>
-                            <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <a href="{{ route('uptd.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
-                                        <i class="bx bx-show"></i>
-                                    </a>
-                                    
-                                    <form action="{{ route('uptd.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                           <td class="text-center">
+    <div class="d-flex justify-content-center gap-1">
+        <a href="{{ route('uptd.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
+            <i class="bx bx-show"></i>
+        </a>
+
+        <a href="{{ route('uptd.cpcl.edit', $row->id) }}" class="btn btn-icon btn-sm btn-label-warning" title="Edit Data">
+            <i class="bx bx-edit"></i>
+        </a>
+        
+        <form action="{{ route('uptd.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm" title="Hapus Data">
+                <i class="bx bx-trash"></i>
+            </button>
+        </form>
+    </div>
+</td>
                         </tr>
                         @empty
                         <tr>

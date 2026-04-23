@@ -18,7 +18,7 @@
 
     <meta name="description" content="" />
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/favicon/favicon.ico') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets\img\icons\brands\logo.svg') }}" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -39,30 +39,33 @@
     <script src="{{ asset('assets/vendor/js/helpers.js') }}"></script>
     <script src="{{ asset('assets/js/config.js') }}"></script>
 
-    <style>
-        /* Overlay menutup seluruh layar */
+   <style>
+        /* 1. Pastikan Z-INDEX loader lebih tinggi dari sidebar Sneat (biasanya 1075-1100) */
         #global-loader {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(255, 255, 255, 0.95); /* Putih bersih transparan */
-            z-index: 999999; /* Paling atas */
+            background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
+            z-index: 999999 !important; /* Menaikkan lapisan ke paling atas */
             display: flex;
             justify-content: center;
             align-items: center;
-            transition: opacity 0.4s ease-out, visibility 0.4s;
+            transition: opacity 0.3s ease-out, visibility 0.3s;
         }
 
-        /* Class untuk menyembunyikan loader */
         .loader-hidden {
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
         }
 
-        /* Animasi teks kedip */
+        /* 2. Style SweetAlert agar di atas segalanya */
+        .swal2-container {
+            z-index: 1000000 !important;
+        }
+
         .loading-text {
             animation: blink 1.5s infinite;
         }
@@ -78,10 +81,10 @@
 
     <div id="global-loader">
         <div class="d-flex flex-column justify-content-center align-items-center">
-            <div class="spinner-border spinner-border-lg text-primary" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.25em;">
+            <div class="spinner-border spinner-border-lg" style="color:#2e7d32;" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.25em;">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-3 fw-bold text-primary loading-text" style="letter-spacing: 1px; font-size: 0.9rem;">MEMPROSES DATA...</p>
+            <p class="mt-3 fw-bold loading-text" style="color:#2e7d32;" style="letter-spacing: 1px; font-size: 0.9rem;">MEMPROSES DATA...</p>
         </div>
     </div>
     <div class="layout-wrapper layout-content-navbar">

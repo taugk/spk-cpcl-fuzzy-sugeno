@@ -31,11 +31,13 @@
       </a>
     </li>
 
-    {{-- MENU ADMIN ONLY (Super Admin, Pangan, Hartibun) --}}
+    {{-- MENU ADMIN GROUP (Super Admin, Pangan, Hartibun) --}}
     @if($isAdminGroup)
       <li class="menu-header small text-uppercase">
         <span class="menu-header-text">Master Data</span>
       </li>
+      
+      {{-- Data CPCL (Bisa diakses semua Admin Group) --}}
       <li class="menu-item {{ request()->routeIs('admin.cpcl.*') ? 'open active' : '' }}">
         <a href="javascript:void(0);" class="menu-link menu-toggle">
           <i class="menu-icon tf-icons bx bx-data"></i>
@@ -50,7 +52,7 @@
         </ul>
       </li>
 
-      {{-- Hanya Super Admin yang bisa mengelola User --}}
+      {{-- Hanya Super Admin (admin) yang bisa mengelola User --}}
       @if(auth()->user()->role == 'admin')
       <li class="menu-item {{ request()->routeIs('admin.user-management*') ? 'active' : '' }}">
         <a href="{{ route('admin.user-management.index') }}" class="menu-link">
@@ -63,18 +65,24 @@
       <li class="menu-header small text-uppercase">
         <span class="menu-header-text">Logika Fuzzy</span>
       </li>
-      <li class="menu-item {{ request()->routeIs('admin.kriteria*') ? 'active' : '' }}">
-        <a href="{{ route('admin.kriteria.index') }}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-list-ul"></i>
-          <div>Data Kriteria</div>
-        </a>
-      </li>
-      <li class="menu-item {{ request()->routeIs('admin.sub-kriteria*') ? 'active' : '' }}">
-        <a href="{{ route('admin.sub-kriteria.index') }}" class="menu-link">
-          <i class="menu-icon tf-icons bx bx-slider-alt"></i>
-          <div>Data Sub-Kriteria</div>
-        </a>
-      </li>
+
+      {{-- 🔥 PROTEKSI: Hanya Super Admin (admin) yang bisa melihat Kriteria & Sub-Kriteria --}}
+      @if(auth()->user()->role == 'admin')
+        <li class="menu-item {{ request()->routeIs('admin.kriteria*') ? 'active' : '' }}">
+          <a href="{{ route('admin.kriteria.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-list-ul"></i>
+            <div>Data Kriteria</div>
+          </a>
+        </li>
+        <li class="menu-item {{ request()->routeIs('admin.sub-kriteria*') ? 'active' : '' }}">
+          <a href="{{ route('admin.sub-kriteria.index') }}" class="menu-link">
+            <i class="menu-icon tf-icons bx bx-slider-alt"></i>
+            <div>Data Sub-Kriteria</div>
+          </a>
+        </li>
+      @endif
+
+      {{-- Perhitungan & Ranking (Bisa diakses admin_pangan & admin_hartibun) --}}
       <li class="menu-item {{ request()->routeIs('admin.perhitungan*') ? 'active' : '' }}">
         <a href="{{ route('admin.perhitungan.index') }}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-calculator"></i>

@@ -186,54 +186,68 @@ class FuzzySugenoService
         return $result;
     }
 
-    public static function hitungSemuaDanRanking(?string $periode = null): Collection
-    {
-        $query = Cpcl::where('status', 'terverifikasi');
+    /**
+ * Proses hitung semua CPCL terverifikasi dan simpan ranking.
+ * Ditambahkan parameter $bidang untuk filter admin bidang.
+ */
+public static function hitungSemuaDanRanking(?string $periode = null, ?string $bidang = null): Collection
+{
+    // 1. Inisialisasi query
+    $query = Cpcl::where('status', 'terverifikasi');
 
-        if ($periode) {
-            $query->whereYear('created_at', $periode);
-        }
-
-        $cpclList = $query->get();
-
-        $hasilList = [];
-
-        foreach ($cpclList as $cpcl) {
-            try {
-                $hasil = self::hitung($cpcl->id);
-
-                $hasilList[] = array_merge([
-                    'cpcl_id' => $cpcl->id
-                ], $hasil);
-
-            } catch (\Exception $e) {
-                Log::error("Skip ID {$cpcl->id}: " . $e->getMessage());
-            }
-        }
-
-        $ranked = collect($hasilList)
-            ->sortByDesc('skor_akhir')
-            ->values();
-
-        DB::transaction(function () use ($ranked) {
-            foreach ($ranked as $rank => $item) {
-                HasilFuzzy::updateOrCreate(
-                    ['cpcl_id' => $item['cpcl_id']],
-                    [
-                        'nilai_alpha'      => $item['alpha'],
-                        'nilai_z'          => $item['z'],
-                        'skor_akhir'       => $item['skor_akhir'],
-                        'status_kelayakan' => $item['status_kelayakan'],
-                        'skala_prioritas'  => $item['skala_prioritas'],
-                        'interpretasi'     => $item['interpretasi'],
-                        'ranking'          => $rank + 1,
-                    ]
-                );
-            }
-        });
-
-        return $ranked;
+    // 2. Filter berdasarkan periode jika ada
+    if ($periode) {
+        $query->whereYear('created_at', $periode);
     }
+
+    // 3. 🔥 FILTER BERDASARKAN BIDANG (Tambahan Baru)
+    // Pastikan kolom 'bidang' ada di tabel cpcl Anda
+    if ($bidang) {
+        $query->where('bidang', $bidang);
+    }
+
+    $cpclList = $query->get();
+    $hasilList = [];
+
+    // 4. Proses perhitungan satu per satu
+    foreach ($cpclList as $cpcl) {
+        try {
+            $hasil = self::hitung($cpcl->id);
+
+            $hasilList[] = array_merge([
+                'cpcl_id' => $cpcl->id
+            ], $hasil);
+
+        } catch (\Exception $e) {
+            Log::error("Skip ID {$cpcl->id}: " . $e->getMessage());
+        }
+    }
+
+    // 5. Urutkan berdasarkan skor tertinggi (Ranking)
+    $ranked = collect($hasilList)
+        ->sortByDesc('skor_akhir')
+        ->values();
+
+    // 6. Simpan ke database menggunakan transaksi
+    DB::transaction(function () use ($ranked) {
+        foreach ($ranked as $rank => $item) {
+            HasilFuzzy::updateOrCreate(
+                ['cpcl_id' => $item['cpcl_id']],
+                [
+                    'nilai_alpha'      => $item['alpha'],
+                    'nilai_z'          => $item['z'],
+                    'skor_akhir'       => $item['skor_akhir'],
+                    'status_kelayakan' => $item['status_kelayakan'],
+                    'skala_prioritas'  => $item['skala_prioritas'],
+                    'interpretasi'     => $item['interpretasi'],
+                    'ranking'          => $rank + 1,
+                ]
+            );
+        }
+    });
+
+    return $ranked;
+}
 
     public static function cekSinkronisasiData(int $cpcl_id): array
     {

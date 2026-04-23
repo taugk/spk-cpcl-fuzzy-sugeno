@@ -65,12 +65,6 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        $this->call([
-            KriteriaSeeder::class,
-            AlamatWilayahSeeder::class,
-            CpclSeeder::class,
-        ]);
-
         
     }
 }

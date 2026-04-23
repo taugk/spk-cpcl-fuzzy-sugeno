@@ -6,18 +6,20 @@ use App\Models\Cpcl;
 use App\Models\Alamat;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Concerns\ToCollection;
 
 class CpclImport implements ToCollection
 {
     public function collection(Collection $rows)
     {
-        // hapus header
+        // Hapus header
         $rows->shift();
 
         foreach ($rows as $index => $row) {
 
             try {
+
                 // =========================
                 // 🔥 VALIDASI DASAR
                 // =========================
@@ -26,23 +28,24 @@ class CpclImport implements ToCollection
                 }
 
                 // =========================
-                // 🔥 NORMALISASI DATA WILAYAH
+                // 🔥 NORMALISASI DATA
                 // =========================
+                $namaKelompok = strtoupper(trim($row[0]));
+                $namaKetua    = strtoupper(trim($row[1]));
+                $nik          = str_pad(trim($row[2]), 16, '0', STR_PAD_LEFT);
+
                 $kab = strtoupper(trim($row[5]));
                 $kec = strtoupper(trim($row[6]));
                 $desa = strtoupper(trim($row[7]));
 
                 // =========================
-                // 🔥 CARI ALAMAT (PRIORITAS)
+                // 🔥 CARI / BUAT ALAMAT
                 // =========================
                 $alamat = Alamat::where('kabupaten', $kab)
                     ->where('kecamatan', $kec)
                     ->where('desa', $desa)
                     ->first();
 
-                // =========================
-                // 🔥 JIKA TIDAK ADA → AUTO CREATE
-                // =========================
                 if (!$alamat) {
                     $alamat = Alamat::create([
                         'kd_kab'    => '32.08',
@@ -91,12 +94,37 @@ class CpclImport implements ToCollection
                 }
 
                 // =========================
+                // 🔥 GENERATE FILE OTOMATIS
+                // =========================
+                $fileKtpPath       = "ktp/{$nik}.jpg";
+                $fileProposalPath  = "proposal/{$nik}.pdf";
+                $fileSkPath        = "sk/{$nik}.pdf";
+                $fileLahanPath     = "lahan/{$nik}.jpg";
+
+                // cek file di storage
+                $file_ktp = Storage::disk('public')->exists($fileKtpPath)
+                    ? $fileKtpPath
+                    : 'default/ktp.png';
+
+                $file_proposal = Storage::disk('public')->exists($fileProposalPath)
+                    ? $fileProposalPath
+                    : 'default/proposal.pdf';
+
+                $file_sk = Storage::disk('public')->exists($fileSkPath)
+                    ? $fileSkPath
+                    : 'default/sk.pdf';
+
+                $foto_lahan = Storage::disk('public')->exists($fileLahanPath)
+                    ? $fileLahanPath
+                    : 'default/lahan.jpg';
+
+                // =========================
                 // 🔥 SIMPAN CPCL
                 // =========================
                 Cpcl::create([
-                    'nama_kelompok'   => strtoupper(trim($row[0])),
-                    'nama_ketua'      => strtoupper(trim($row[1])),
-                    'nik_ketua'       => str_pad(trim($row[2]), 16, '0', STR_PAD_LEFT),
+                    'nama_kelompok'   => $namaKelompok,
+                    'nama_ketua'      => $namaKetua,
+                    'nik_ketua'       => $nik,
 
                     'bidang'          => strtoupper(trim($row[3])),
                     'rencana_usaha'   => trim($row[4]),
@@ -106,18 +134,18 @@ class CpclImport implements ToCollection
                     'lokasi'          => trim($row[8]),
                     'luas_lahan'      => $luas,
                     'status_lahan'    => $status,
-                    'lama_berdiri'    => (int) $row[11],
-                    'hasil_panen'     => (float) $row[12],
-                    'latitude'        => $row[13],
-                    'longitude'       => $row[14],
+                    'lama_berdiri'    => (int) ($row[11] ?? 0),
+                    'hasil_panen'     => (float) ($row[12] ?? 0),
+                    'latitude'        => $row[13] ?? null,
+                    'longitude'       => $row[14] ?? null,
 
-                    // file default null
-                    'file_proposal'   => null,
-                    'file_ktp'        => null,
-                    'file_sk'         => null,
-                    'foto_lahan'      => null,
+                    // 🔥 FILE AUTO
+                    'file_proposal'   => $file_proposal,
+                    'file_ktp'        => $file_ktp,
+                    'file_sk'         => $file_sk,
+                    'foto_lahan'      => $foto_lahan,
 
-                    // status default
+                    // 🔥 STATUS
                     'status'          => 'baru',
                     'catatan_verifikator' => null,
                 ]);
