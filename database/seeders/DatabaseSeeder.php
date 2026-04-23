@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
 
     public function run(): void
     {
-        User::create([
+        User::updateOrcreate([
             'username' => 'admin',
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::create([
+        User::updateOrcreate([
             'username' => 'uptd',
             'name' => 'UPTD',
             'email' => 'uptd@gmail.com',
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::create([
+        User::updateOrcreate([
             'username' => 'admin_pangan',
             'name' => 'Admin Pangan',
             'email' => 'adminpangan@gmail.com',
@@ -49,7 +49,7 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::create([
+        User::updateOrcreate([
             'username' => 'admin_hartibun',
             'name' => 'Admin Hartibun',
             'email' => 'adminhartibun@gmail.com',
