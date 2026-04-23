@@ -12,28 +12,33 @@ use Illuminate\Support\Str;
 class UserFactory extends Factory
 {
     /**
-     * The current password being used by the factory.
+     * Password cache.
      */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
+     * Define default state.
      */
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+            'username' => $this->faker->userName(),
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+
+            // default values (akan dioverride oleh seeder kamu)
+            'role' => 'admin',
+            'status' => 'aktif',
+            'created_by' => null,
+            'last_login_at' => null,
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Unverified state.
      */
     public function unverified(): static
     {
