@@ -5,23 +5,19 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
+        User::create([
             'username' => 'admin',
             'name' => 'Admin',
             'email' => 'admin@gmail.com',
-            'password' => bcrypt('admin123'),
+            'password' => Hash::make('admin123'),
             'role' => 'admin',
             'status' => 'aktif',
             'email_verified_at' => now(),
@@ -29,11 +25,11 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::factory()->create([
+        User::create([
             'username' => 'uptd',
             'name' => 'UPTD',
             'email' => 'uptd@gmail.com',
-            'password' => bcrypt('uptd123'),
+            'password' => Hash::make('uptd123'),
             'role' => 'uptd',
             'status' => 'aktif',
             'email_verified_at' => now(),
@@ -41,11 +37,11 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::factory()->create([
+        User::create([
             'username' => 'admin_pangan',
             'name' => 'Admin Pangan',
             'email' => 'adminpangan@gmail.com',
-            'password' => bcrypt('adminpangan123'),
+            'password' => Hash::make('adminpangan123'),
             'role' => 'admin_pangan',
             'status' => 'aktif',
             'email_verified_at' => now(),
@@ -53,18 +49,16 @@ class DatabaseSeeder extends Seeder
             'last_login_at' => now(),
         ]);
 
-        User::factory()->create([
+        User::create([
             'username' => 'admin_hartibun',
             'name' => 'Admin Hartibun',
             'email' => 'adminhartibun@gmail.com',
-            'password' => bcrypt('adminhartibun123'),
+            'password' => Hash::make('adminhartibun123'),
             'role' => 'admin_hartibun',
             'status' => 'aktif',
             'email_verified_at' => now(),
             'created_by' => null,
             'last_login_at' => now(),
         ]);
-
-        
     }
 }
