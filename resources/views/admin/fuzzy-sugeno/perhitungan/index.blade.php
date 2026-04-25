@@ -176,12 +176,12 @@
                                 </thead>
                                 <tbody>
                                     <tr class="table-danger border-white">
-                                        <td class="fw-bold">z > 0.75</td>
+                                        <td class="fw-bold">z > 0.70</td>
                                         <td>Prioritas I</td>
                                         <td>Sangat Layak (Prioritas Utama)</td>
                                     </tr>
                                     <tr class="table-warning border-white">
-                                        <td class="fw-bold">0.60 < z ≤ 0.75</td>
+                                        <td class="fw-bold">0.60 < z ≤ 0.70</td>
                                         <td>Prioritas II</td>
                                         <td>Layak (Diprioritaskan)</td>
                                     </tr>

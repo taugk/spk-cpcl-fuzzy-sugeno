@@ -321,31 +321,36 @@ public static function hitungSemuaDanRanking(?string $periode = null, ?string $b
         };
     }
 
-   private static function getSkalaPrioritas(float $z): array
+
+    private static function getSkalaPrioritas(float $z): array
 {
     return match (true) {
+        // Karena data sulit tembus 0.80, kita turunkan batas ke 0.70 atau 0.75
         $z >= 0.70 => [
-            'prioritas' => 'Prioritas I',
-            'status' => 'Sangat Layak',
-            'interpretasi' => 'Sangat Diprioritaskan'
+            'prioritas'    => 'Prioritas I',
+            'status'       => 'Sangat Layak',
+            'interpretasi' => 'Sangat Diprioritaskan (Skor Unggul di atas rata-rata)'
         ],
 
-        $z >= 0.50 => [
-            'prioritas' => 'Prioritas II',
-            'status' => 'Layak',
-            'interpretasi' => 'Diprioritaskan'
+        // Rentang sempit di 0.60 - 0.69 untuk memisahkan yang "Layak" dari yang "Sangat Layak"
+        $z >= 0.60 => [
+            'prioritas'    => 'Prioritas II',
+            'status'       => 'Layak',
+            'interpretasi' => 'Diprioritaskan (Skor Baik)'
         ],
 
-        $z >= 0.40 => [
-            'prioritas' => 'Prioritas III',
-            'status' => 'Dipertimbangkan',
-            'interpretasi' => 'Perlu Pertimbangan'
+        // Sesuai permintaan Anda: batas bawah di 0.55
+        $z >= 0.55 => [
+            'prioritas'    => 'Prioritas III',
+            'status'       => 'Dipertimbangkan',
+            'interpretasi' => 'Perlu Pertimbangan (Skor Cukup/Ambang Batas)'
         ],
 
+        // Di bawah 0.55 langsung masuk kategori rendah
         default => [
-            'prioritas' => 'Prioritas IV',
-            'status' => 'Ditolak',
-            'interpretasi' => 'Belum Memenuhi Secara Optimal'
+            'prioritas'    => 'Prioritas IV',
+            'status'       => 'Ditolak',
+            'interpretasi' => 'Belum Memenuhi Kriteria Secara Optimal'
         ],
     };
 }
