@@ -51,7 +51,6 @@ class FuzzySugenoService
         $fuzzifikasi = [];
 
         foreach ($kriteriaList as $kriteria) {
-
             $field = $kriteria->mapping_field;
 
             if ($kriteria->jenis_kriteria === 'kontinu') {
@@ -67,7 +66,7 @@ class FuzzySugenoService
             $himpunanAktif = [];
 
             foreach ($kriteria->subKriteria as $sub) {
-
+                // 🔥 MODIFIKASI: Mu diskrit mengambil nilai konsekuen
                 $mu = self::hitungMu($sub, $inputString);
 
                 $z = (float) ($sub->nilai_konsekuen ?? 0);
@@ -80,9 +79,9 @@ class FuzzySugenoService
                         'nama'   => $sub->nama_sub_kriteria,
                         'mu'     => round($mu, 4),
                         'z'      => $z,
-                        'tipe'   => $sub->tipe_kurva,
+                        'tipe'   => $sub->tipe_kurva, 
                         'params' => [
-                            'tipe' => $sub->tipe_kurva,
+                            'tipe' => $sub->tipe_kurva, 
                             'a'    => $sub->batas_bawah,
                             'b'    => $sub->batas_tengah_1,
                             'c'    => $sub->batas_tengah_2,
@@ -101,11 +100,10 @@ class FuzzySugenoService
         }
 
         // =========================
-        // 🔥 RULE BASE SUGENO
+        // 🔥 RULE BASE AKTIF
         // =========================
 
         $rules = [];
-
         $listHimpunan = array_map(fn($f) => $f['himpunan'], $fuzzifikasi);
         $kombinasiRule = self::kombinasi($listHimpunan);
 
@@ -114,20 +112,22 @@ class FuzzySugenoService
         $maxAlpha    = 0.0;
 
         foreach ($kombinasiRule as $index => $ruleItems) {
-
             if (empty($ruleItems)) continue;
 
+            // Operator AND (MIN)
             $alpha = min(array_column($ruleItems, 'mu'));
 
             if ($alpha <= 0) continue;
 
-            // 🔥 Z RULE (default: rata-rata)
-            $z = array_sum(array_column($ruleItems, 'z')) / count($ruleItems);
+            // Identifikasi Rule Naskah
+            $z_naskah = self::getNaskahRuleZ($ruleItems, $fuzzifikasi);
+            $namaRule = self::getNamaRuleNaskah($ruleItems, $fuzzifikasi) ?? 'R' . ($index + 1);
 
-           $rules[] = [
-                'rule_id' => $index + 1,
-                'rule'    => 'R' . ($index + 1),
+            $z = $z_naskah ?? (array_sum(array_column($ruleItems, 'z')) / count($ruleItems));
 
+            $rules[] = [
+                'rule_id'   => $index + 1,
+                'rule'      => $namaRule, 
                 'anteceden' => array_map(function($r, $idx) use ($fuzzifikasi) {
                     return [
                         'kriteria' => $fuzzifikasi[$idx]['nama'],
@@ -135,7 +135,6 @@ class FuzzySugenoService
                         'mu'       => $r['mu']
                     ];
                 }, $ruleItems, array_keys($ruleItems)),
-
                 'alpha'     => round($alpha, 4),
                 'z_rule'    => round($z, 4),
                 'alpha_x_z' => round($alpha * $z, 4),
@@ -150,7 +149,6 @@ class FuzzySugenoService
         }
 
         $z_final = $totalAlpha > 0 ? ($totalAlphaZ / $totalAlpha) : 0.0;
-
         $skala = self::getSkalaPrioritas($z_final);
 
         return [
@@ -168,127 +166,58 @@ class FuzzySugenoService
         ];
     }
 
-    // =========================
-    // 🔥 GENERATE KOMBINASI RULE
-    // =========================
-    private static function kombinasi(array $arrays, array $prefix = []): array
+    private static function getNamaRuleNaskah(array $ruleItems, array $fuzzifikasi): ?string
     {
-        if (empty($arrays)) return [$prefix];
-
-        $result = [];
-        $first = array_shift($arrays);
-
-        foreach ($first as $item) {
-            $newPrefix = array_merge($prefix, [$item]);
-            $result = array_merge($result, self::kombinasi($arrays, $newPrefix));
+        $c = [];
+        foreach ($ruleItems as $idx => $r) {
+            $kode = strtoupper($fuzzifikasi[$idx]['kode']);
+            $c[$kode] = strtolower($r['nama']);
         }
 
-        return $result;
+        $c1 = $c['C1'] ?? ''; $c2 = $c['C2'] ?? ''; $c3 = $c['C3'] ?? '';
+        $c4 = $c['C4'] ?? ''; $c5 = $c['C5'] ?? '';
+
+        // Deteksi label sesuai Tabel Naskah (R1-R16)
+        if (str_contains($c1, 'sempit') && str_contains($c2, 'tidak') && str_contains($c3, 'baru') && str_contains($c4, 'rendah') && str_contains($c5, 'tidak')) return "R1";
+        if (str_contains($c1, 'sempit') && str_contains($c2, 'sewa') && str_contains($c3, 'baru') && str_contains($c4, 'rendah') && str_contains($c5, 'tidak')) return "R2";
+        if (str_contains($c1, 'sempit') && str_contains($c2, 'milik') && str_contains($c3, 'lama') && str_contains($c4, 'sedang') && str_contains($c5, 'lengkap')) return "R3";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'sewa') && str_contains($c3, 'lama') && str_contains($c4, 'sedang') && str_contains($c5, 'lengkap')) return "R4";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'milik') && str_contains($c3, 'lama') && str_contains($c4, 'tinggi') && str_contains($c5, 'sangat')) return "R5";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'milik') && str_contains($c3, 'sangat') && str_contains($c4, 'tinggi') && str_contains($c5, 'sangat')) return "R6";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'sewa') && str_contains($c3, 'lama') && str_contains($c4, 'tinggi') && str_contains($c5, 'lengkap')) return "R7";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'tidak') && str_contains($c3, 'baru') && str_contains($c4, 'rendah') && str_contains($c5, 'tidak')) return "R8";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'tidak') && str_contains($c3, 'baru') && str_contains($c4, 'rendah') && str_contains($c5, 'tidak')) return "R9";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'milik') && str_contains($c3, 'lama') && str_contains($c4, 'tinggi') && str_contains($c5, 'lengkap')) return "R10";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'milik') && str_contains($c3, 'baru') && str_contains($c4, 'sedang') && str_contains($c5, 'lengkap')) return "R11";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'sewa') && str_contains($c3, 'baru') && str_contains($c4, 'sedang') && str_contains($c5, 'lengkap')) return "R12";
+        if (str_contains($c1, 'sempit') && str_contains($c2, 'milik') && str_contains($c3, 'baru') && str_contains($c4, 'sedang') && str_contains($c5, 'lengkap')) return "R13";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'milik') && str_contains($c3, 'lama') && str_contains($c4, 'sedang') && str_contains($c5, 'sangat')) return "R14";
+        if (str_contains($c1, 'sedang') && str_contains($c2, 'sewa') && str_contains($c3, 'lama') && str_contains($c4, 'rendah') && str_contains($c5, 'tidak')) return "R15";
+        if (str_contains($c1, 'luas')   && str_contains($c2, 'milik') && str_contains($c3, 'lama') && str_contains($c4, 'tinggi') && str_contains($c5, 'sangat')) return "R16";
+
+        return null;
     }
 
-    /**
- * Proses hitung semua CPCL terverifikasi dan simpan ranking.
- * Ditambahkan parameter $bidang untuk filter admin bidang.
- */
-public static function hitungSemuaDanRanking(?string $periode = null, ?string $bidang = null): Collection
-{
-    // 1. Inisialisasi query
-    $query = Cpcl::where('status', 'terverifikasi');
-
-    // 2. Filter berdasarkan periode jika ada
-    if ($periode) {
-        $query->whereYear('created_at', $periode);
-    }
-
-    // 3. 🔥 FILTER BERDASARKAN BIDANG (Tambahan Baru)
-    // Pastikan kolom 'bidang' ada di tabel cpcl Anda
-    if ($bidang) {
-        $query->where('bidang', $bidang);
-    }
-
-    $cpclList = $query->get();
-    $hasilList = [];
-
-    // 4. Proses perhitungan satu per satu
-    foreach ($cpclList as $cpcl) {
-        try {
-            $hasil = self::hitung($cpcl->id);
-
-            $hasilList[] = array_merge([
-                'cpcl_id' => $cpcl->id
-            ], $hasil);
-
-        } catch (\Exception $e) {
-            Log::error("Skip ID {$cpcl->id}: " . $e->getMessage());
-        }
-    }
-
-    // 5. Urutkan berdasarkan skor tertinggi (Ranking)
-    $ranked = collect($hasilList)
-        ->sortByDesc('skor_akhir')
-        ->values();
-
-    // 6. Simpan ke database menggunakan transaksi
-    DB::transaction(function () use ($ranked) {
-        foreach ($ranked as $rank => $item) {
-            HasilFuzzy::updateOrCreate(
-                ['cpcl_id' => $item['cpcl_id']],
-                [
-                    'nilai_alpha'      => $item['alpha'],
-                    'nilai_z'          => $item['z'],
-                    'skor_akhir'       => $item['skor_akhir'],
-                    'status_kelayakan' => $item['status_kelayakan'],
-                    'skala_prioritas'  => $item['skala_prioritas'],
-                    'interpretasi'     => $item['interpretasi'],
-                    'ranking'          => $rank + 1,
-                ]
-            );
-        }
-    });
-
-    return $ranked;
-}
-
-    public static function cekSinkronisasiData(int $cpcl_id): array
+    private static function getNaskahRuleZ(array $ruleItems, array $fuzzifikasi): ?float
     {
-        $cpcl = Cpcl::findOrFail($cpcl_id);
-        $kriteriaList = Kriteria::with('subKriteria')->get();
-
-        $errors = [];
-
-        foreach ($kriteriaList as $kriteria) {
-
-            $field = $kriteria->mapping_field;
-
-            if ($kriteria->jenis_kriteria === 'kontinu') {
-                $nilai = $cpcl->{$field} ?? null;
-                $clean = preg_replace('/[^0-9.]/', '', (string)$nilai);
-
-                if (is_null($nilai) || $nilai === '') {
-                    $errors[] = "Cek {$kriteria->kode_kriteria}: Data kosong.";
-                } elseif (!is_numeric($clean)) {
-                    $errors[] = "Cek {$kriteria->kode_kriteria}: Bukan angka.";
-                }
-
-            } else {
-                $nilai = DB::table('cpcl_penilaian')
-                    ->where('cpcl_id', $cpcl_id)
-                    ->where('kriteria_id', $kriteria->id)
-                    ->value('nilai');
-
-                if (is_null($nilai) || $nilai === '') {
-                    $errors[] = "Cek {$kriteria->kode_kriteria}: Belum diisi.";
-                }
-            }
-        }
-
-        return ['is_valid' => empty($errors), 'messages' => $errors];
+        // Logika ini sama dengan getNaskahRuleZ sebelumnya untuk mendapatkan nilai output Z
+        $nama = self::getNamaRuleNaskah($ruleItems, $fuzzifikasi);
+        return match($nama) {
+            "R1", "R2", "R4", "R8", "R9", "R15" => 0.25,
+            "R3", "R11", "R12", "R13"           => 0.50,
+            "R5", "R6", "R7", "R10", "R14"      => 0.75,
+            "R16"                               => 1.00,
+            default                             => null
+        };
     }
 
     private static function hitungMu(object $sub, string $input): float
     {
         if ($sub->tipe_kurva === 'diskrit') {
-            return (strtolower(trim($input)) === strtolower(trim($sub->nama_sub_kriteria))) ? 1.0 : 0.0;
+            if (strtolower(trim($input)) === strtolower(trim($sub->nama_sub_kriteria))) {
+                return (float) ($sub->nilai_konsekuen ?? 1.0);
+            }
+            return 0.0;
         }
 
         $clean = preg_replace('/[^0-9.]/', '', $input);
@@ -310,10 +239,82 @@ public static function hitungSemuaDanRanking(?string $periode = null, ?string $b
         };
     }
 
+    private static function kombinasi(array $arrays, array $prefix = []): array
+    {
+        if (empty($arrays)) return [$prefix];
+        $result = [];
+        $first = array_shift($arrays);
+        foreach ($first as $item) {
+            $newPrefix = array_merge($prefix, [$item]);
+            $result = array_merge($result, self::kombinasi($arrays, $newPrefix));
+        }
+        return $result;
+    }
+
+    public static function hitungSemuaDanRanking(?string $periode = null, ?string $bidang = null): Collection
+    {
+        $query = Cpcl::where('status', 'terverifikasi');
+        if ($periode) $query->whereYear('created_at', $periode);
+        if ($bidang)  $query->where('bidang', $bidang);
+
+        $cpclList = $query->get();
+        $hasilList = [];
+
+        foreach ($cpclList as $cpcl) {
+            try {
+                $hasil = self::hitung($cpcl->id);
+                $hasilList[] = array_merge(['cpcl_id' => $cpcl->id], $hasil);
+            } catch (\Exception $e) {
+                Log::error("Skip ID {$cpcl->id}: " . $e->getMessage());
+            }
+        }
+
+        $ranked = collect($hasilList)->sortByDesc('skor_akhir')->values();
+
+        DB::transaction(function () use ($ranked) {
+            foreach ($ranked as $rank => $item) {
+                HasilFuzzy::updateOrCreate(
+                    ['cpcl_id' => $item['cpcl_id']],
+                    [
+                        'nilai_alpha'      => $item['alpha'],
+                        'nilai_z'          => $item['z'],
+                        'skor_akhir'       => $item['skor_akhir'],
+                        'status_kelayakan' => $item['status_kelayakan'],
+                        'skala_prioritas'  => $item['skala_prioritas'],
+                        'interpretasi'     => $item['interpretasi'],
+                        'ranking'          => $rank + 1,
+                    ]
+                );
+            }
+        });
+
+        return $ranked;
+    }
+
+    public static function cekSinkronisasiData(int $cpcl_id): array
+    {
+        $cpcl = Cpcl::findOrFail($cpcl_id);
+        $kriteriaList = Kriteria::with('subKriteria')->get();
+        $errors = [];
+
+        foreach ($kriteriaList as $kriteria) {
+            $field = $kriteria->mapping_field;
+            if ($kriteria->jenis_kriteria === 'kontinu') {
+                $nilai = $cpcl->{$field} ?? null;
+                $clean = preg_replace('/[^0-9.]/', '', (string)$nilai);
+                if (is_null($nilai) || $nilai === '') $errors[] = "Cek {$kriteria->kode_kriteria}: Kosong.";
+                elseif (!is_numeric($clean)) $errors[] = "Cek {$kriteria->kode_kriteria}: Bukan angka.";
+            } else {
+                $nilai = DB::table('cpcl_penilaian')->where('cpcl_id', $cpcl_id)->where('kriteria_id', $kriteria->id)->value('nilai');
+                if (is_null($nilai) || $nilai === '') $errors[] = "Cek {$kriteria->kode_kriteria}: Belum diisi.";
+            }
+        }
+        return ['is_valid' => empty($errors), 'messages' => $errors];
+    }
+
     private static function getFallbackK(string $namaSub): float
     {
         $n = strtolower($namaSub);
-
         return match (true) {
             str_contains($n, 'sangat') || str_contains($n, 'tinggi') || str_contains($n, 'baik') => 1.0,
             str_contains($n, 'sedang') || str_contains($n, 'cukup') => 0.7,
@@ -321,37 +322,13 @@ public static function hitungSemuaDanRanking(?string $periode = null, ?string $b
         };
     }
 
-
     private static function getSkalaPrioritas(float $z): array
-{
-    return match (true) {
-        // Karena data sulit tembus 0.80, kita turunkan batas ke 0.70 atau 0.75
-        $z >= 0.70 => [
-            'prioritas'    => 'Prioritas I',
-            'status'       => 'Sangat Layak',
-            'interpretasi' => 'Sangat Diprioritaskan (Skor Unggul di atas rata-rata)'
-        ],
-
-        // Rentang sempit di 0.60 - 0.69 untuk memisahkan yang "Layak" dari yang "Sangat Layak"
-        $z >= 0.60 => [
-            'prioritas'    => 'Prioritas II',
-            'status'       => 'Layak',
-            'interpretasi' => 'Diprioritaskan (Skor Baik)'
-        ],
-
-        // Sesuai permintaan Anda: batas bawah di 0.55
-        $z >= 0.55 => [
-            'prioritas'    => 'Prioritas III',
-            'status'       => 'Dipertimbangkan',
-            'interpretasi' => 'Perlu Pertimbangan (Skor Cukup/Ambang Batas)'
-        ],
-
-        // Di bawah 0.55 langsung masuk kategori rendah
-        default => [
-            'prioritas'    => 'Prioritas IV',
-            'status'       => 'Ditolak',
-            'interpretasi' => 'Belum Memenuhi Kriteria Secara Optimal'
-        ],
-    };
-}
+    {
+        return match (true) {
+            $z >= 0.81 => ['prioritas' => 'Prioritas I', 'status' => 'Sangat Layak', 'interpretasi' => 'Sangat Diprioritaskan'],
+            $z >= 0.70 => ['prioritas' => 'Prioritas II', 'status' => 'Diprioritaskan', 'interpretasi' => 'Diprioritaskan'],
+            $z >= 0.55 => ['prioritas' => 'Prioritas III', 'status' => 'Dipertimbangkan', 'interpretasi' => 'Dipertimbangkan'],
+            default    => ['prioritas' => 'Prioritas IV', 'status' => 'Tidak Diprioritaskan', 'interpretasi' => 'Tidak Diprioritaskan'],
+        };
+    }
 }
