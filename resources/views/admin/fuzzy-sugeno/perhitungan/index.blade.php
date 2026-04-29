@@ -43,7 +43,7 @@
                         </form>
                     </div>
 
-                    <div class="col-md-8">
+                    {{-- <div class="col-md-8">
                         <label class="form-label fw-bold text-dark small text-uppercase">Otomasi Perhitungan Sistem</label>
                         <form method="POST" action="{{ route('admin.perhitungan.proses') }}">
                             @csrf
@@ -59,7 +59,7 @@
                                 </span>
                             </div>
                         </form>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-@extends('uptd.layouts.app')
+@extends('admin.layouts.app')
 
 @section('title', 'Cetak Surat Keputusan (SK)')
 
@@ -12,7 +12,7 @@
         <button onclick="window.print()" class="btn btn-success">
             <i class="bx bxs-printer me-1"></i> Cetak Dokumen
         </button>
-        <a href="{{ route('uptd.laporan.index') }}" class="btn btn-secondary">
+        <a href="{{ route('admin.laporan.index') }}" class="btn btn-secondary">
             <i class="bx bx-arrow-back me-1"></i> Kembali
         </a>
     </div>
