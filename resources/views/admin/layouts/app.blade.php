@@ -72,6 +72,18 @@
             100% { opacity: 0.5; }
         }
     </style>
+
+    <style>
+    /* Animasi halus untuk ikon leaf */
+    .bxs-leaf {
+        animation: sway 3s ease-in-out infinite;
+    }
+
+    @keyframes sway {
+        0%, 100% { transform: rotate(-5deg); }
+        50% { transform: rotate(5deg); }
+    }
+</style>
   </head>
 
 <body>

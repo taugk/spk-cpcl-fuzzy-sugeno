@@ -14,6 +14,15 @@
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
+                    @if($data->total() > 0)
+                        <form action="{{route('admin.cpcl.truncate')}}" method="POST" id="formDeleteAll">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteAll()">
+                                <i class="bx bx-trash me-1"></i> Hapus Semua
+                            </button>
+                        </form>
+                        @endif
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i> Import Excel
                     </button>
@@ -384,6 +393,24 @@
                 filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
             });
     });
+
+
+    function confirmDeleteAll() {
+    Swal.fire({
+        title: 'Apakah Anda yakin?',
+        text: "Semua data CPCL akan dihapus permanen dan tidak bisa dikembalikan!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus Semua!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('formDeleteAll').submit();
+        }
+    });
+}
 </script>
 
 <style>

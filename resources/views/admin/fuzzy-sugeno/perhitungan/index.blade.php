@@ -24,45 +24,60 @@
         </div>
 
         {{-- PANEL KONTROL --}}
-        <div class="card shadow-sm mb-4 border-top border-success border-3 no-print">
-            <div class="card-body">
-                <div class="row g-4 align-items-center">
-                    <div class="col-md-4 border-end">
-                        <label class="form-label fw-bold text-dark small text-uppercase">Pilih Periode Laporan</label>
-                        <form method="GET" action="{{ route('admin.perhitungan.index') }}">
-                            <div class="input-group border-success">
-                                <span class="input-group-text bg-white"><i class="bx bx-calendar"></i></span>
-                                <select name="periode" class="form-select border-success" onchange="this.form.submit()">
-                                    @foreach($periodeList as $p)
-                                        <option value="{{ $p }}" {{ $periode == $p ? 'selected' : '' }}>
-                                            Tahun Anggaran {{ $p }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </form>
+<div class="card shadow-sm mb-4 border-top border-success border-3 no-print">
+    <div class="card-body">
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4 border-end">
+                <label class="form-label fw-bold text-dark small text-uppercase">Pilih Periode Laporan</label>
+                <form method="GET" action="{{ route('admin.perhitungan.index') }}">
+                    <div class="input-group border-success">
+                        <span class="input-group-text bg-white"><i class="bx bx-calendar"></i></span>
+                        <select name="periode" class="form-select border-success" onchange="this.form.submit()">
+                            @foreach($periodeList as $p)
+                                <option value="{{ $p }}" {{ $periode == $p ? 'selected' : '' }}>
+                                    Tahun Anggaran {{ $p }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
+                </form>
+            </div>
 
-                    {{-- <div class="col-md-8">
-                        <label class="form-label fw-bold text-dark small text-uppercase">Otomasi Perhitungan Sistem</label>
-                        <form method="POST" action="{{ route('admin.perhitungan.proses') }}">
-                            @csrf
-                            <input type="hidden" name="periode" value="{{ $periode }}">
-                            <div class="d-flex align-items-center gap-3">
-                                <button type="submit" class="btn btn-success px-4 shadow-sm" {{ $totalTerverifikasi == 0 ? 'disabled' : '' }}>
-                                    <i class="bx bx-sync me-1"></i> Jalankan Kalkulasi Ranking
-                                </button>
-                                <div class="vr"></div>
-                                <span class="badge bg-label-info">
-                                    <i class="bx bx-info-circle me-1"></i> 
-                                    Data Terverifikasi: <strong>{{ $totalTerverifikasi }}</strong> Kelompok
-                                </span>
-                            </div>
-                        </form>
-                    </div> --}}
+            {{-- Bagian ini hanya akan tampil jika role BUKAN admin --}}
+            @if(Auth::user()->role !== 'admin')
+            <div class="col-md-8">
+                <label class="form-label fw-bold text-dark small text-uppercase">Otomasi Perhitungan Sistem</label>
+                <form method="POST" action="{{ route('admin.perhitungan.proses') }}">
+                    @csrf
+                    <input type="hidden" name="periode" value="{{ $periode }}">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="submit" class="btn btn-success px-4 shadow-sm" {{ $totalTerverifikasi == 0 ? 'disabled' : '' }}>
+                            <i class="bx bx-sync me-1"></i> Jalankan Kalkulasi Ranking
+                        </button>
+                        <div class="vr"></div>
+                        <span class="badge bg-label-info">
+                            <i class="bx bx-info-circle me-1"></i> 
+                            Data Terverifikasi: <strong>{{ $totalTerverifikasi }}</strong> Kelompok
+                        </span>
+                    </div>
+                </form>
+            </div>
+            @else
+            {{-- Opsional: Tampilkan informasi saja tanpa tombol bagi Admin --}}
+            <div class="col-md-8">
+                <label class="form-label fw-bold text-dark small text-uppercase">Status Data</label>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-label-info">
+                        <i class="bx bx-info-circle me-1"></i> 
+                        Total Data Terverifikasi: <strong>{{ $totalTerverifikasi }}</strong> Kelompok
+                    </span>
+                    <small class="text-muted italic">*Hanya Super Admin/Pakar yang dapat menjalankan kalkulasi.</small>
                 </div>
             </div>
+            @endif
         </div>
+    </div>
+</div>
 
         {{-- TABEL DATA UTAMA --}}
         <div class="card shadow-sm border-0">

@@ -69,6 +69,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pa
     Route::get('/cpcl/terverifikasi', [CpclController::class, 'verified'])->name('cpcl.verifikasi');
     Route::get('/cpcl/belum-verifikasi', [CpclController::class, 'belum'])->name('cpcl.belum-verifikasi');
     Route::post('/cpcl/import', [CpclController::class, 'import'])->name('cpcl.import');
+    Route::delete('/cpcl/truncate', [CpclController::class, 'truncate'])->name('cpcl.truncate');
     Route::get('/tambah', [CpclController::class, 'create'])->name('add.cpcl');
     Route::post('/tambah', [CpclController::class, 'store'])->name('cpcl.store');
     Route::get('/cpcl/{id}/edit', [CpclController::class, 'edit'])->name('cpcl.edit');

@@ -10,6 +10,8 @@ use App\Services\CpclService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 
 class CpclController extends Controller
@@ -322,6 +324,70 @@ class CpclController extends Controller
         } catch (\Throwable $e) {
             Log::error('CPCL DELETE FAILED: ' . $e->getMessage());
             return back()->with('error', 'Gagal menghapus data');
+        }
+    }
+
+    public function truncate()
+    {
+        // Cek otorisasi (Hanya role tertentu yang boleh truncate total)
+        if (!in_array(auth()->user()->role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk tindakan ini.');
+        }
+
+        try {
+            // 1. Ambil semua data (termasuk soft deletes) untuk hapus file fisik
+            // Kita ambil hanya kolom filenya saja agar memori lebih ringan
+            $allCpcl = \App\Models\Cpcl::withTrashed()
+                ->select('file_proposal', 'file_ktp', 'file_sk', 'foto_lahan')
+                ->get();
+
+            // 2. Mulai Transaksi Database
+            \DB::beginTransaction();
+
+            // 3. Matikan Foreign Key Checks agar bisa truncate tabel yang berelasi
+            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            // 4. Proses Hapus File Fisik di Storage
+            foreach ($allCpcl as $cpcl) {
+                $storage = \Storage::disk('public');
+                
+                if ($cpcl->file_proposal && $storage->exists($cpcl->file_proposal)) {
+                    $storage->delete($cpcl->file_proposal);
+                }
+                if ($cpcl->file_ktp && $storage->exists($cpcl->file_ktp)) {
+                    $storage->delete($cpcl->file_ktp);
+                }
+                if ($cpcl->file_sk && $storage->exists($cpcl->file_sk)) {
+                    $storage->delete($cpcl->file_sk);
+                }
+                if ($cpcl->foto_lahan && $storage->exists($cpcl->foto_lahan)) {
+                    $storage->delete($cpcl->foto_lahan);
+                }
+            }
+
+            // 5. Eksekusi Truncate (Mengosongkan tabel & reset ID ke 1)
+            // Urutan: Tabel anak dulu, baru tabel induk
+            \DB::table('hasil_fuzzy')->truncate();
+            \DB::table('cpcl_penilaian')->truncate();
+            \DB::table('cpcl')->truncate();
+
+            // 6. Aktifkan kembali Foreign Key Checks
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            // 7. Commit Transaksi
+            \DB::commit();
+
+            return redirect()->route('admin.cpcl.index')->with('success', 'Seluruh data CPCL dan file lampiran telah berhasil dihapus secara permanen.');
+
+        } catch (\Exception $e) {
+            // Jika gagal, batalkan semua perubahan
+            \DB::rollBack();
+            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            // Log error untuk debugging
+            \Log::error("TRUNCATE CPCL ERROR: " . $e->getMessage());
+
+            return redirect()->back()->with('error', 'Gagal mengosongkan data: ' . $e->getMessage());
         }
     }
 }
