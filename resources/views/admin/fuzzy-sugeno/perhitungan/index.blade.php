@@ -71,7 +71,7 @@
                         <i class="bx bx-info-circle me-1"></i> 
                         Total Data Terverifikasi: <strong>{{ $totalTerverifikasi }}</strong> Kelompok
                     </span>
-                    <small class="text-muted italic">*Hanya Super Admin/Pakar yang dapat menjalankan kalkulasi.</small>
+                    <small class="text-muted italic">*Hanya Super Admin Bidang yang dapat menjalankan kalkulasi.</small>
                 </div>
             </div>
             @endif
