@@ -82,15 +82,32 @@ class CpclController extends Controller
     }
 
     public function belum(Request $request)
-    {
-        $role  = $this->getRolePrefix();
-        $query = $this->secureQuery()->where('status', '!=', 'terverifikasi' )->where('status', '!=', 'ditolak')->where('status', '!=', 'perlu_perbaikan');
+{
+    $role  = $this->getRolePrefix();
+    $query = $this->secureQuery()
+                  ->whereNotIn('status', ['terverifikasi', 'ditolak', 'perlu_perbaikan']);
 
-        $this->applyFilters($query, $request);
+    // Logika Search Tanpa LIKE (Exact Match untuk Indexing)
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function($q) use ($search) {
+            // Menggunakan '=' agar database menggunakan B-Tree Index secara optimal
+            $q->where('nama_kelompok', $search)
+              ->orWhere('nik_ketua', $search);
+        });
+    }
 
-        $data = $query->latest()->paginate(10)->withQueryString();
+    $this->applyFilters($query, $request);
+
+    $data = $query->latest()->paginate(10)->withQueryString();
+
+    // Cek jika request adalah AJAX
+    if ($request->ajax()) {
         return view("$role.data-cpcl.belum-verifikasi", compact('data'));
     }
+
+    return view("$role.data-cpcl.belum-verifikasi", compact('data'));
+}
 
     public function perbaikan(Request $request)
     {
@@ -328,66 +345,46 @@ class CpclController extends Controller
     }
 
     public function truncate()
-    {
-        // Cek otorisasi (Hanya role tertentu yang boleh truncate total)
-        if (!in_array(auth()->user()->role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
-            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk tindakan ini.');
-        }
+{
+    if (!in_array(auth()->user()->role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
+        return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
+    }
 
-        try {
-            // 1. Ambil semua data (termasuk soft deletes) untuk hapus file fisik
-            // Kita ambil hanya kolom filenya saja agar memori lebih ringan
-            $allCpcl = \App\Models\Cpcl::withTrashed()
-                ->select('file_proposal', 'file_ktp', 'file_sk', 'foto_lahan')
-                ->get();
+    try {
+        // 1. Physical file deletion (Do this before DB changes so we still have the paths)
+        $allCpcl = \App\Models\Cpcl::withTrashed()
+            ->select('file_proposal', 'file_ktp', 'file_sk', 'foto_lahan')
+            ->get();
 
-            // 2. Mulai Transaksi Database
-            \DB::beginTransaction();
-
-            // 3. Matikan Foreign Key Checks agar bisa truncate tabel yang berelasi
-            \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-
-            // 4. Proses Hapus File Fisik di Storage
-            foreach ($allCpcl as $cpcl) {
-                $storage = \Storage::disk('public');
-                
-                if ($cpcl->file_proposal && $storage->exists($cpcl->file_proposal)) {
-                    $storage->delete($cpcl->file_proposal);
-                }
-                if ($cpcl->file_ktp && $storage->exists($cpcl->file_ktp)) {
-                    $storage->delete($cpcl->file_ktp);
-                }
-                if ($cpcl->file_sk && $storage->exists($cpcl->file_sk)) {
-                    $storage->delete($cpcl->file_sk);
-                }
-                if ($cpcl->foto_lahan && $storage->exists($cpcl->foto_lahan)) {
-                    $storage->delete($cpcl->foto_lahan);
+        foreach ($allCpcl as $cpcl) {
+            $storage = \Storage::disk('public');
+            $files = ['file_proposal', 'file_ktp', 'file_sk', 'foto_lahan'];
+            
+            foreach ($files as $file) {
+                if ($cpcl->$file && $storage->exists($cpcl->$file)) {
+                    $storage->delete($cpcl->$file);
                 }
             }
-
-            // 5. Eksekusi Truncate (Mengosongkan tabel & reset ID ke 1)
-            // Urutan: Tabel anak dulu, baru tabel induk
-            \DB::table('hasil_fuzzy')->truncate();
-            \DB::table('cpcl_penilaian')->truncate();
-            \DB::table('cpcl')->truncate();
-
-            // 6. Aktifkan kembali Foreign Key Checks
-            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-            // 7. Commit Transaksi
-            \DB::commit();
-
-            return redirect()->route('admin.cpcl.index')->with('success', 'Seluruh data CPCL dan file lampiran telah berhasil dihapus secara permanen.');
-
-        } catch (\Exception $e) {
-            // Jika gagal, batalkan semua perubahan
-            \DB::rollBack();
-            \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-
-            // Log error untuk debugging
-            \Log::error("TRUNCATE CPCL ERROR: " . $e->getMessage());
-
-            return redirect()->back()->with('error', 'Gagal mengosongkan data: ' . $e->getMessage());
         }
+
+        // 2. Database Cleanup
+        // We use a try-finally or just direct execution because TRUNCATE auto-commits.
+        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        \DB::table('hasil_fuzzy')->truncate();
+        \DB::table('cpcl_penilaian')->truncate();
+        \DB::table('cpcl')->truncate();
+        
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        return redirect()->route('admin.cpcl.index')->with('success', 'Data dan file berhasil dihapus.');
+
+    } catch (\Exception $e) {
+        // Ensure keys are turned back on even if it fails
+        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Log::error("TRUNCATE CPCL ERROR: " . $e->getMessage());
+
+        return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
     }
+}
 }

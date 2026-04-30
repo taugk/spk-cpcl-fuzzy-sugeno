@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Data Master CPCL')
+@section('title', 'Data Belum Verifikasi')
 
 @section('content')
 <div class="content-wrapper">
@@ -9,11 +9,20 @@
         <div class="card">
             <div class="card-header border-bottom d-flex flex-column flex-md-row align-items-center justify-content-between">
                 <div>
-                    <h5 class="card-title mb-0">Master Data CPCL</h5>
-                    <small class="text-muted">Data Calon Petani & Calon Lokasi (Periode 2026)</small>
+                    <h5 class="card-title mb-0">CPCL Belum Terverifikasi</h5>
+                    <small class="text-muted">Data CPCL yang perlu diproses</small>
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
+                    @if($data->total() > 0)
+                        <form action="{{route('admin.cpcl.truncate')}}" method="POST" id="formDeleteAll">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button" class="btn btn-outline-danger" onclick="confirmDeleteAll()">
+                                <i class="bx bx-trash me-1"></i> Hapus Semua
+                            </button>
+                        </form>
+                        @endif
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i> Import Excel
                     </button>
@@ -35,7 +44,8 @@
 
             {{-- FILTER SECTION --}}
             <div class="card-body mt-3">
-                <form action="{{ route('admin.cpcl.index') }}" method="GET" class="row g-3">
+                {{-- Diarahkan ke current URL agar filter tetap berada di halaman Belum Verifikasi --}}
+                <form action="{{ url()->current() }}" method="GET" class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Kecamatan</label>
                         <select name="kecamatan" id="filter-kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -65,10 +75,11 @@
                     <div class="col-md-6 d-flex align-items-end justify-content-md-end">
                         <div class="input-group input-group-sm w-75">
                             <span class="input-group-text"><i class="bx bx-search"></i></span>
-                            <input type="text" name="search" class="form-control" placeholder="Cari Poktan / NIK Ketua..." value="{{ request('search') }}">
+                            {{-- Input search untuk Exact Match sesuai controller --}}
+                            <input type="text" name="search" class="form-control" placeholder="Input Nama Poktan / NIK Tepat..." value="{{ request('search') }}">
                             <button class="btn btn-success" type="submit">Cari</button>
                             @if(request()->anyFilled(['kecamatan', 'rencana_usaha', 'search']))
-                                <a href="{{ route('admin.cpcl.index') }}" class="btn btn-outline-danger" title="Reset Filter">
+                                <a href="{{ url()->current() }}" class="btn btn-outline-danger" title="Reset Filter">
                                     <i class="bx bx-x"></i>
                                 </a>
                             @endif
@@ -146,55 +157,28 @@
                                 </div>
                             </td>
                             <td>
-                                @php
-                                    $statusClass = [
-                                        'baru' => 'bg-label-info',
-                                        'terverifikasi' => 'bg-label-success',
-                                        'perlu_perbaikan' => 'bg-label-warning',
-                                        'ditolak' => 'bg-label-danger'
-                                    ][strtolower($row->status)] ?? 'bg-label-secondary';
-                                @endphp
-                                <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
+                                <span class="badge bg-label-info">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
                             </td>
                             <td class="text-center">
-    <div class="d-flex justify-content-center gap-1">
-
-    {{-- VERIFIKASI: Disembunyikan untuk role admin --}}
-    @if(Auth::user()->role !== 'admin')
-        <a href="{{ route('admin.cpcl.verify', $row->id) }}" 
-           class="btn btn-sm btn-outline-success"
-           title="Verifikasi Data">
-            <i class="bx bx-shield-check me-1"></i> Verifikasi
-        </a>
-    @endif
-
-    {{-- DETAIL --}}
-    <a href="{{ route('admin.cpcl.show', $row->id) }}" 
-       class="btn btn-icon btn-sm btn-outline-info"
-       title="Lihat Detail">
-        <i class="bx bx-show"></i>
-    </a>
-
-    {{-- EDIT --}}
-    <a href="{{ route('admin.cpcl.edit', $row->id) }}" 
-       class="btn btn-icon btn-sm btn-outline-primary"
-       title="Edit Data">
-        <i class="bx bx-pencil"></i>
-    </a>
-
-    {{-- HAPUS --}}
-    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
-        @csrf
-        @method('DELETE')
-        <button type="submit" 
-            class="btn btn-icon btn-sm btn-outline-danger btn-delete-confirm"
-            title="Hapus Data">
-            <i class="bx bx-trash"></i>
-        </button>
-    </form>
-
-</div>
-</td>
+                                <div class="d-flex justify-content-center gap-1">
+                                    @if(Auth::user()->role !== 'admin')
+                                    {{-- Tombol Verifikasi Khusus Halaman Belum Verifikasi --}}
+                                    <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Verifikasi Sekarang">
+                                        <i class="bx bx-shield-check me-1"></i> Verifikasi
+                                    </a>
+                                    @endif
+                                    <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
+                                        <i class="bx bx-show"></i>
+                                    </a>
+                                    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -215,6 +199,7 @@
     </div>
 </div>
 
+{{-- MODAL IMPORT --}}
 <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -228,11 +213,7 @@
                         <label class="form-label fw-bold">Pilih File Excel (.xlsx / .xls)</label>
                         <input type="file" id="inputExcel" class="form-control" accept=".xlsx, .xls">
                     </div>
-                    <div class="col-md-6 d-flex align-items-end">
-                        <small class="text-muted">Pastikan kolom sesuai dengan template sistem.</small>
-                    </div>
                 </div>
-
                 <div id="previewContainer" style="display: none;" class="mt-4">
                     <h6 class="fw-bold text-primary"><i class="bx bx-table me-1"></i> Preview 10 Baris Pertama:</h6>
                     <div class="table-responsive border rounded" style="max-height: 350px;">
@@ -242,7 +223,6 @@
                         </table>
                     </div>
                 </div>
-                
                 <div id="emptyPreview" class="text-center py-5 border rounded bg-light mt-3">
                     <i class="bx bx-spreadsheet display-4 text-muted"></i>
                     <p class="mb-0">Silahkan pilih file untuk melihat preview data.</p>
@@ -258,6 +238,7 @@
     </div>
 </div>
 
+{{-- MODAL PREVIEW FILE --}}
 <div class="modal fade" id="modalPreview" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -313,12 +294,10 @@
         tbody.innerHTML = '';
 
         if (data.length > 0) {
-            // Render Header
             let headHtml = '<tr>';
             data[0].forEach(cell => headHtml += `<th>${cell || ''}</th>`);
             thead.innerHTML = headHtml + '</tr>';
 
-            // Render Body (Max 10 baris)
             for (let i = 1; i < Math.min(data.length, 11); i++) {
                 let bodyHtml = '<tr>';
                 data[i].forEach(cell => bodyHtml += `<td>${cell || ''}</td>`);
@@ -331,7 +310,7 @@
         }
     }
 
-    // --- AJAX SIMPAN KE SERVER ---
+    // --- AJAX SIMPAN ---
     document.getElementById('btnSimpanImport').addEventListener('click', function() {
         const btn = this;
         const formData = new FormData();
@@ -361,7 +340,7 @@
         });
     });
 
-    // --- FUNGSI PREVIEW LAMPIRAN (LAMA) ---
+    // --- PREVIEW FILE ---
     function previewFile(url, title) {
         const previewContent = document.getElementById('previewContent');
         const modalTitle = document.getElementById('modalTitle');
@@ -388,7 +367,7 @@
         new bootstrap.Modal(document.getElementById('modalPreview')).show();
     }
 
-    // --- FILTER KECAMATAN API ---
+    // --- API KECAMATAN ---
     document.addEventListener('DOMContentLoaded', function(){
         const filterKecamatan = document.getElementById('filter-kecamatan');
         const currentKecamatan = "{{ request('kecamatan') }}";
@@ -409,6 +388,23 @@
                 filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
             });
     });
+
+    function confirmDeleteAll() {
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Data akan dihapus permanen!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Ya, Hapus!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('formDeleteAll').submit();
+            }
+        });
+    }
 </script>
 
 <style>

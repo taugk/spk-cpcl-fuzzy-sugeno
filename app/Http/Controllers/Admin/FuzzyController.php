@@ -68,10 +68,10 @@ class FuzzyController extends Controller
             ->whereNotNull('hasil_fuzzy.ranking');
         
         $hasilRanking = $this->filterByRole($queryRanking)
-            ->orderBy('hasil_fuzzy.ranking')
+            // Ubah dari 'ranking' menjadi 'skor_akhir' dengan urutan DESC (Descending)
+            ->orderBy('hasil_fuzzy.skor_akhir', 'desc') 
             ->select('hasil_fuzzy.*')
             ->get();
-
         // 4. Hitung Total Terverifikasi (Filtered)
         $queryTotal = Cpcl::where('status', 'terverifikasi')
             ->whereYear('created_at', $periode);
