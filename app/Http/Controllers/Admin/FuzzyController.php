@@ -124,7 +124,7 @@ class FuzzyController extends Controller
         }
     }
 
-    public function detail(int $id)
+    public function detail($id)
     {
         // Temukan CPCL, pastikan user tidak bisa mengintip ID milik bidang lain
         $query = Cpcl::where('id', $id);

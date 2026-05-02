@@ -237,54 +237,47 @@ class CpclService
     // =========================================================================
 
     public function verifyCpcl(int $id, array $data): Cpcl
-    {
-        // ── [1] ATOMIK: Simpan penilaian + update status ──────────────────────
-        $cpcl = DB::transaction(function () use ($id, $data) {
-            $cpcl = Cpcl::findOrFail($id);
+{
+    // ── [1] ATOMIK: Simpan penilaian + update status ──────────────────────
+    // Kita bungkus dalam transaction agar data status & nilai konsisten
+    return DB::transaction(function () use ($id, $data) {
+        $cpcl = Cpcl::findOrFail($id);
 
-            $cpcl->status              = $data['status'];
-            $cpcl->catatan_verifikator = $data['catatan_verifikator'] ?? null;
-            $cpcl->save();
+        // 1. Update Status Utama CPCL
+        $cpcl->status              = $data['status'];
+        $cpcl->catatan_verifikator = $data['catatan_verifikator'] ?? null;
+        $cpcl->save();
 
-            if (!empty($data['nilai'])) {
-                DB::table('cpcl_penilaian')->where('cpcl_id', $id)->delete();
+        // 2. Simpan atau Update Penilaian Kriteria
+        if (isset($data['nilai']) && is_array($data['nilai'])) {
+            foreach ($data['nilai'] as $kriteriaId => $isiNilai) {
+                // Abaikan jika nilai kosong
+                if ($isiNilai === null || $isiNilai === '') continue;
 
-                $rows = [];
-                foreach ($data['nilai'] as $kriteriaId => $isiNilai) {
-                    if ($isiNilai === null || $isiNilai === '') {
-                        Log::warning('verifyCpcl: nilai kosong dilewati', [
-                            'cpcl_id'     => $id,
-                            'kriteria_id' => $kriteriaId,
-                        ]);
-                        continue;
-                    }
-                    $rows[] = [
+                // Menggunakan updateOrInsert agar mendukung fitur EDIT
+                DB::table('cpcl_penilaian')->updateOrInsert(
+                    [
                         'cpcl_id'     => $id,
                         'kriteria_id' => (int) $kriteriaId,
+                    ],
+                    [
                         'nilai'       => trim($isiNilai),
-                        'created_at'  => now(),
                         'updated_at'  => now(),
-                    ];
-                }
-
-                if (!empty($rows)) {
-                    DB::table('cpcl_penilaian')->insert($rows);
-                    Log::debug('verifyCpcl: penilaian tersimpan', [
-                        'cpcl_id' => $id,
-                        'jumlah'  => count($rows),
-                    ]);
-                }
+                        // 'created_at' diisi otomatis oleh DB jika baru, 
+                        // tapi jika manual bisa tambahkan logic check existence
+                    ]
+                );
             }
-
-            return $cpcl;
-        });
-        // ← Transaction selesai. cpcl_penilaian & cpcl.status sudah COMMIT.
-
-        // ── [2] Fuzzy TIDAK dijalankan di sini ───────────────────────────────
-        // Perhitungan massal dilakukan dari halaman Ranking (hitungSemuaDanRanking).
+            
+            Log::info('verifyCpcl: penilaian berhasil diproses (save/update)', [
+                'cpcl_id' => $id,
+                'jumlah_kriteria' => count($data['nilai'])
+            ]);
+        }
 
         return $cpcl;
-    }
+    });
+}
 
     // =========================================================================
     // DELETE

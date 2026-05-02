@@ -157,19 +157,34 @@
                                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
                             </td>
                             <td class="text-center">
-                                <div class="d-flex justify-content-center gap-1">
-                                    <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
-                                        <i class="bx bx-show"></i>
-                                    </a>
-                                    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+    <div class="d-flex justify-content-center gap-1">
+        @if($row->status !== 'baru')
+            {{-- Tombol Edit Verifikasi (Hanya muncul jika sudah pernah diverifikasi/bukan status baru) --}}
+            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Edit Verifikasi">
+                <i class="bx bx-shield-check"></i> Edit Verifikasi
+            </a>
+        @else
+            {{-- Tombol Verifikasi Pertama Kali --}}
+            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-warning" title="Verifikasi Data">
+                <i class="bx bx-check-shield">Verifikasi</i>
+            </a>
+        @endif
+
+        {{-- Tombol Detail --}}
+        <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
+            <i class="bx bx-show"></i>
+        </a>
+
+        {{-- Tombol Hapus --}}
+        <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm" title="Hapus Data">
+                <i class="bx bx-trash"></i>
+            </button>
+        </form>
+    </div>
+</td>
                         </tr>
                         @empty
                         <tr>

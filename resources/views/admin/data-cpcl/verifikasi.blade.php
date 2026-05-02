@@ -8,10 +8,10 @@
 
 <style>
     :root {
-        --primary-green: #2e7d32;     /* Hijau utama */
-        --green-soft: #e8f5e9;       /* Background lembut */
-        --green-light: #66bb6a;      /* Aksen */
-        --green-dark: #1b5e20;       /* Judul */
+        --primary-green: #2e7d32;
+        --green-soft: #e8f5e9;
+        --green-light: #66bb6a;
+        --green-dark: #1b5e20;
         --border-color: #e0e0e0;
     }
 
@@ -51,7 +51,6 @@
         letter-spacing: 0.5px;
     }
 
-    /* Data Display Grid */
     .info-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -61,7 +60,7 @@
 
     .data-item {
         padding: 12px 16px;
-        background: var(--soft-bg);
+        background: #f8f9fa;
         border-radius: 12px;
         border: 1px solid var(--border-color);
     }
@@ -81,7 +80,6 @@
         color: #2d3748;
     }
 
-    /* Tile Styling */
     .tile-container {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -96,9 +94,8 @@
         background: #fff;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         transition: transform 0.2s;
-        border-top: 1px solid var(--border-color);
-        border-right: 1px solid var(--border-color);
-        border-bottom: 1px solid var(--border-color);
+        border: 1px solid var(--border-color);
+        border-left-width: 4px;
     }
 
     .tile-item:hover { transform: translateY(-2px); }
@@ -125,7 +122,6 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
 
-    /* Kriteria Grid */
     .kriteria-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -154,13 +150,12 @@
             </div>
         </div>
 
-        {{-- FORM UTAMA MEMBUNGKUS KESELURUHAN ROW AGAR VALID --}}
         <form id="formVerify" method="POST" action="{{ route('admin.cpcl.verify.process', $cpcl->id) }}">
             @csrf
             
             <div class="row">
                 <div class="col-lg-8">
-                    
+                    {{-- Profil Kelompok --}}
                     <div class="card card-modern">
                         <div class="card-header-modern">
                             <div class="section-icon bg-label-success text-primary shadow-sm">
@@ -220,10 +215,8 @@
                                 <span class="data-label d-block fw-semibold mb-1">Lokasi / Alamat Detail</span>
                                 <div class="data-value fw-normal small text-muted lh-base">
                                     <i class="bi bi-geo-alt-fill text-danger me-1"></i>
-                                    {{-- Menampilkan detail jalan / blok (dari textarea lokasi) --}}
                                     <span class="text-dark fw-medium">{{ $cpcl->lokasi ?? 'Detail alamat belum diatur' }}</span>
                                     <br>
-                                    {{-- Menampilkan urutan wilayah administratif di baris bawahnya --}}
                                     <span style="margin-left: 1.35rem; display: inline-block; margin-top: 2px;">
                                         Desa {{ $cpcl->alamat->desa ?? '-' }}, 
                                         Kecamatan {{ $cpcl->alamat->kecamatan ?? '-' }}, 
@@ -234,7 +227,7 @@
                         </div>
                     </div>
 
-                    {{-- Penilaian Kriteria --}}
+                    {{-- Penilaian Kriteria (SUPPORT EDIT) --}}
                     <div class="card card-modern border-success border" style="border-width: 2px !important;">
                         <div class="card-header-modern bg-label-success">
                             <div class="section-icon bg-success text-white shadow-sm">
@@ -245,24 +238,35 @@
 
                         <div class="p-4 pt-3">
                             @if(isset($kriteria) && $kriteria->count() > 0)
-                                <div class="alert alert-info border-0 mb-4 d-flex align-items-center">
+                                <div class="alert alert-info border-0 mb-4 d-flex align-items-center shadow-sm">
                                     <i class="bi bi-info-circle-fill me-2 fs-4"></i>
-                                    <small>Silakan verifikasi atau sesuaikan nilai yang dimasukkan oleh UPTD sebelum disimpan ke tabel penilaian.</small>
+                                    <small>Nilai yang tampil adalah nilai tersimpan (jika sudah diverifikasi) atau nilai awal dari UPTD.</small>
                                 </div>
 
                                 <div class="kriteria-grid">
                                     @foreach($kriteria as $item)
+                                        @php
+                                            // Mencari nilai yang sudah tersimpan di tabel penilaian
+                                            $existing = $cpcl->penilaian->where('kriteria_id', $item->id)->first();
+                                            $savedValue = $existing ? $existing->nilai : null;
+                                            // Prioritas: Nilai tersimpan > Nilai mapping UPTD > Kosong
+                                            $currentValue = $savedValue ?? ($cpcl->{$item->mapping_field} ?? '');
+                                        @endphp
                                         <div class="p-3 border rounded-3 bg-white shadow-none h-100 position-relative">
                                             <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
                                                 <div class="fw-bold small text-dark">
                                                     {{ $item->kode_kriteria }} - {{ $item->nama_kriteria }}
                                                 </div>
-                                                <span class="badge {{ $item->jenis_kriteria == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
-                                                    {{ strtoupper($item->jenis_kriteria) }}
-                                                </span>
+                                                <div class="d-flex gap-1">
+                                                    @if($savedValue !== null)
+                                                        <span class="badge bg-label-warning text-xxs" style="font-size: 0.6rem;">TEREDIT</span>
+                                                    @endif
+                                                    <span class="badge {{ $item->jenis_kriteria == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
+                                                        {{ strtoupper($item->jenis_kriteria) }}
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            {{-- JIKA JENIS KONTINU (Input Angka) --}}
                                             @if($item->jenis_kriteria == 'kontinu')
                                                 <div>
                                                     <label class="form-label text-xxs fw-bold text-muted mb-1">
@@ -270,12 +274,10 @@
                                                     </label>
                                                     <div class="input-group input-group-sm">
                                                         <input type="number" step="0.01" name="nilai[{{ $item->id }}]" 
-                                                               value="{{ $cpcl->{$item->mapping_field} ?? '' }}" 
+                                                               value="{{ $currentValue }}" 
                                                                class="form-control border-primary-subtle" required>
                                                     </div>
                                                 </div>
-                                            
-                                            {{-- JIKA JENIS DISKRIT (Dropdown Pilihan) --}}
                                             @else
                                                 <div>
                                                     <label class="form-label text-xxs fw-bold text-muted mb-1">
@@ -285,7 +287,7 @@
                                                         <option value="">-- Verifikasi Kategori --</option>
                                                         @foreach($item->subKriteria as $sub)
                                                             <option value="{{ $sub->nama_sub_kriteria }}" 
-                                                                {{ strtolower($cpcl->{$item->mapping_field} ?? '') == strtolower($sub->nama_sub_kriteria) ? 'selected' : '' }}>
+                                                                {{ strtolower($currentValue) == strtolower($sub->nama_sub_kriteria) ? 'selected' : '' }}>
                                                                 {{ $sub->nama_sub_kriteria }} 
                                                             </option>
                                                         @endforeach
@@ -298,14 +300,16 @@
                             @else
                                 <div class="text-center py-4 bg-label-warning rounded">
                                     <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mb-0 mt-2 fw-bold">Kriteria penilaian belum dikonfigurasi oleh admin.</p>
+                                    <p class="mb-0 mt-2 fw-bold">Kriteria penilaian belum dikonfigurasi.</p>
                                 </div>
                             @endif
                         </div>
                     </div>
                 </div>
 
+                {{-- Sidebar --}}
                 <div class="col-lg-4">
+                    {{-- Dokumen --}}
                     <div class="card card-modern">
                         <div class="card-header-modern">
                             <div class="section-icon bg-label-warning text-warning shadow-sm">
@@ -325,7 +329,7 @@
                                 @endphp
                                 @foreach($docs as $doc)
                                 <div class="col-6">
-                                    <div class="text-center p-3 border rounded-3 bg-light transition">
+                                    <div class="text-center p-3 border rounded-3 bg-light">
                                         <i class="bi {{ $doc['i'] }} fs-4 text-{{ $doc['c'] }} mb-1 d-block"></i>
                                         <div class="text-xxs fw-bold text-muted mb-2" style="font-size: 0.7rem;">{{ $doc['l'] }}</div>
                                         @if($doc['f'])
@@ -340,6 +344,7 @@
                         </div>
                     </div>
 
+                    {{-- Map --}}
                     <div class="card card-modern">
                         <div class="card-header-modern">
                             <div class="section-icon bg-label-danger text-danger shadow-sm">
@@ -356,6 +361,7 @@
                         </div>
                     </div>
 
+                    {{-- Form Keputusan --}}
                     <div class="card card-modern border-top border-success border-5 position-sticky" style="top: 20px;">
                         <div class="card-header-modern border-bottom-0 pb-0">
                             <div class="section-icon bg-label-success text-primary shadow-sm">
@@ -368,14 +374,15 @@
                                 <label class="form-label small fw-bold">Status Verifikasi</label>
                                 <select name="status" class="form-select border-primary-subtle shadow-sm" required>
                                     <option value="">-- Pilih Keputusan --</option>
-                                    <option value="terverifikasi" class="text-success fw-bold">TERVERIFIKASI</option>
-                                    <option value="perlu_perbaikan" class="text-warning fw-bold">PERLU PERBAIKAN</option>
-                                    <option value="ditolak" class="text-danger fw-bold">DITOLAK</option>
+                                    <option value="terverifikasi" class="text-success fw-bold" {{ $cpcl->status == 'terverifikasi' ? 'selected' : '' }}>TERVERIFIKASI</option>
+                                    <option value="perlu_perbaikan" class="text-warning fw-bold" {{ $cpcl->status == 'perlu_perbaikan' ? 'selected' : '' }}>PERLU PERBAIKAN</option>
+                                    <option value="ditolak" class="text-danger fw-bold" {{ $cpcl->status == 'ditolak' ? 'selected' : '' }}>DITOLAK</option>
                                 </select>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label small fw-bold">Catatan Verifikator</label>
-                                <textarea name="catatan_verifikator" class="form-control" rows="3" placeholder="Masukkan alasan atau instruksi revisi..."></textarea>
+                                <textarea name="catatan_verifikator" class="form-control" rows="3" 
+                                          placeholder="Masukkan alasan atau instruksi revisi...">{{ old('catatan_verifikator', $cpcl->catatan_verifikator) }}</textarea>
                             </div>
                             <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow">
                                 <i class="bi bi-save me-2"></i> SIMPAN KEPUTUSAN
@@ -388,6 +395,7 @@
     </div>
 </div>
 
+{{-- Modal Preview --}}
 <div class="modal fade" id="previewModal" tabindex="-1">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0">

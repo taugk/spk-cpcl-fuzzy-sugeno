@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Laporan Analisis Fuzzy Sugeno')
+@section('title', 'Detail Analisis Fuzzy Sugeno - ' . $hasil['cpcl']->nama_kelompok)
 
 @section('content')
 <div class="content-wrapper">
@@ -34,12 +34,23 @@
         </div>
 
         {{-- ═══════════════════════════════════════════════════════════════
+             FALLBACK WARNING (jika terjadi)
+        ════════════════════════════════════════════════════════════════ --}}
+        @if($hasil['is_fallback'])
+        <div class="alert alert-warning border-2 border-warning shadow-sm mb-4 no-print">
+            <div class="d-flex align-items-start gap-3">
+                <i class="bx bx-error-circle fs-1"></i>
+                <div>
+                    <h5 class="fw-bold mb-1">⚠️ Mode Fallback Aktif</h5>
+                    <p class="mb-0">{{ $hasil['fallback_note'] }}</p>
+                    <small class="text-secondary">Hasil ini bersifat estimasi karena tidak ada rule aktif yang cocok. Harap review manual.</small>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- ═══════════════════════════════════════════════════════════════
              STEP 1 — FUZZIFIKASI
-             Field yang dipakai dari service:
-               $k['kode'], $k['nama'], $k['input'], $k['jenis']
-               $k['himpunan']       → himpunan dengan μ > 0 (untuk tabel analisis)
-               $k['semua_himpunan'] → semua himpunan       (untuk chart kurva)
-               $s['nama'], $s['mu'], $s['tipe'], $s['params']
         ════════════════════════════════════════════════════════════════ --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom py-3">
@@ -110,7 +121,7 @@
                                         @endforelse
                                     </div>
 
-                                    {{-- Himpunan tidak aktif (abu-abu, lipat) --}}
+                                    {{-- Himpunan tidak aktif --}}
                                     @php
                                         $tidakAktif = array_filter($k['semua_himpunan'], fn($s) => $s['mu'] == 0);
                                     @endphp
@@ -125,7 +136,7 @@
                                         </small>
                                     </div>
                                     @endif
-                                </td>
+                                 </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -136,15 +147,6 @@
 
         {{-- ═══════════════════════════════════════════════════════════════
              STEP 2 — RULE BASE & FIRING STRENGTH
-             Field dari service:
-               $rule['rule_id']    → kode rule (R1, R2, …, R16)
-               $rule['anteceden']  → [{kriteria, himpunan, mu}, …]
-               $rule['alpha']      → firing strength (MIN)
-               $rule['k']          → nilai konsekuen naskah
-               $rule['alpha_x_k']  → α × k
-             Agregat:
-               $hasil['sum_alpha']   → Σα
-               $hasil['sum_alpha_z'] → Σ(α×k)   ← tetap pakai key lama agar kompatibel
         ════════════════════════════════════════════════════════════════ --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom py-3">
@@ -152,6 +154,12 @@
                     <span class="badge bg-warning text-dark me-2">Step 2</span>
                     Rule Base & Firing Strength
                 </h5>
+                <small class="text-muted mt-1 d-block">
+                    Hanya rule dengan flag AKTIF=1 yang dievaluasi.
+                    Total rule: {{ $hasil['rule_stats']['total'] }} | 
+                    Aktif: {{ $hasil['rule_stats']['aktif'] }} (cocok: {{ $hasil['rule_stats']['aktif_cocok'] }}, tidak cocok: {{ $hasil['rule_stats']['aktif_tidak_cocok'] }}) |
+                    Nonaktif: {{ $hasil['rule_stats']['nonaktif'] }}
+                </small>
             </div>
             <div class="table-responsive">
                 <table class="table table-bordered align-middle mb-0">
@@ -166,21 +174,28 @@
                     </thead>
                     <tbody>
                         @forelse($hasil['rules'] as $rule)
-                        <tr class="text-center">
-                            <td class="fw-bold text-success">{{ $rule['rule_id'] }}</td>
+                        <tr class="text-center @if($rule['flag_aktif'] == 0) bg-light opacity-75 @endif">
+                            <td class="fw-bold">
+                                {{ $rule['rule_id'] }}
+                                @if($rule['flag_aktif'] == 0)
+                                    <span class="badge bg-secondary">nonaktif</span>
+                                @elseif($rule['status'] == 'tidak_cocok')
+                                    <span class="badge bg-warning text-dark">tidak cocok</span>
+                                @endif
+                            </td>
                             <td class="text-start">
                                 @foreach($rule['anteceden'] as $i => $ant)
                                     @if($i > 0)
                                         <span class="badge bg-label-dark small mx-1">AND</span>
                                     @endif
-                                    <span class="badge bg-label-success">
+                                    <span class="badge @if($ant['mu'] > 0) bg-label-success @else bg-label-secondary @endif">
                                         {{ $ant['kriteria'] }} = {{ $ant['himpunan'] }}
                                         <span class="opacity-75">(μ={{ number_format($ant['mu'], 4) }})</span>
                                     </span>
                                 @endforeach
                             </td>
                             <td>
-                                <span class="badge bg-success fs-6">
+                                <span class="badge @if($rule['alpha'] > 0) bg-success @else bg-secondary @endif fs-6">
                                     {{ number_format($rule['alpha'], 4) }}
                                 </span>
                             </td>
@@ -198,7 +213,7 @@
                         </tr>
                         @endforelse
                     </tbody>
-                    @if(count($hasil['rules']) > 0)
+                    @if($hasil['sum_alpha'] > 0)
                     <tfoot class="table-light fw-bold text-center">
                         <tr>
                             <td colspan="2" class="text-end text-uppercase pe-3">
@@ -216,7 +231,6 @@
 
         {{-- ═══════════════════════════════════════════════════════════════
              STEP 3 — ANALISIS INFERENSI (Fungsi Implikasi MIN)
-             Menampilkan detail perhitungan α tiap rule secara visual.
         ════════════════════════════════════════════════════════════════ --}}
         <div class="card shadow-sm border-0 mb-4">
             <div class="card-header bg-white border-bottom py-3">
@@ -229,42 +243,50 @@
                 @if(count($hasil['rules']) > 0)
                 <div class="row g-3">
                     @foreach($hasil['rules'] as $rule)
-                    <div class="col-md-6 col-lg-4">
-                        <div class="border rounded p-3 bg-light h-100">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-bold text-success fs-6">{{ $rule['rule_id'] }}</span>
-                                <span class="badge bg-white text-dark border shadow-sm">
-                                    \(\alpha = {{ number_format($rule['alpha'], 4) }}\)
-                                </span>
-                            </div>
-                            <div class="small">
-                                <div class="mb-1 text-muted fst-italic">Operator AND → MIN:</div>
-                                <div class="p-2 bg-white border rounded text-dark text-center mb-2 font-monospace">
-                                    \(\alpha_{ {{ $rule['rule_id'] }} } =\min(\)
-                                    @php
-                                        $muValues = array_map(
-                                            fn($ant) => number_format($ant['mu'], 4),
-                                            $rule['anteceden']
-                                        );
-                                    @endphp
-                                    {{ implode(',\ ', $muValues) }}
-                                    \()= {{ number_format($rule['alpha'], 4) }}\)
-                                </div>
-                                <div class="mt-2 d-flex justify-content-between align-items-center border-top pt-2">
-                                    <small class="text-muted">Konsekuen \((k)\):</small>
-                                    <span class="fw-bold">{{ number_format($rule['k'], 2) }}</span>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">\(\alpha \times k\):</small>
-                                    <span class="fw-bold text-success">
-                                        {{ number_format($rule['alpha_x_k'], 4) }}
+                        @if($rule['flag_aktif'] == 1 && $rule['status'] == 'cocok')
+                        <div class="col-md-6 col-lg-4">
+                            <div class="border rounded p-3 bg-light h-100">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="fw-bold text-success fs-6">{{ $rule['rule_id'] }}</span>
+                                    <span class="badge bg-white text-dark border shadow-sm">
+                                        \(\alpha = {{ number_format($rule['alpha'], 4) }}\)
                                     </span>
+                                </div>
+                                <div class="small">
+                                    <div class="mb-1 text-muted fst-italic">Operator AND → MIN:</div>
+                                    <div class="p-2 bg-white border rounded text-dark text-center mb-2 font-monospace">
+                                        \(\alpha_{ {{ $rule['rule_id'] }} } =\min(\)
+                                        @php
+                                            $muValues = array_map(
+                                                fn($ant) => number_format($ant['mu'], 4),
+                                                $rule['anteceden']
+                                            );
+                                        @endphp
+                                        {{ implode(',\ ', $muValues) }}
+                                        \()= {{ number_format($rule['alpha'], 4) }}\)
+                                    </div>
+                                    <div class="mt-2 d-flex justify-content-between align-items-center border-top pt-2">
+                                        <small class="text-muted">Konsekuen \((k)\):</small>
+                                        <span class="fw-bold">{{ number_format($rule['k'], 2) }}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">\(\alpha \times k\):</small>
+                                        <span class="fw-bold text-success">
+                                            {{ number_format($rule['alpha_x_k'], 4) }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                        @endif
                     @endforeach
                 </div>
+                @if($hasil['rule_stats']['aktif_cocok'] == 0)
+                <div class="alert alert-warning mb-0 mt-3">
+                    <i class="bx bx-info-circle me-1"></i>
+                    Tidak ada rule aktif yang cocok. Sistem menggunakan fallback (rata-rata μ maksimum per kriteria).
+                </div>
+                @endif
                 @else
                 <div class="alert alert-warning mb-0">
                     <i class="bx bx-error me-1"></i>
@@ -276,16 +298,6 @@
 
         {{-- ═══════════════════════════════════════════════════════════════
              STEP 4 — DEFUZZIFIKASI & HASIL AKHIR
-             Field dari service:
-               $hasil['sum_alpha_z'] → Σ(α×k)
-               $hasil['sum_alpha']   → Σα
-               $hasil['z']           → nilai Z akhir
-               $hasil['skor_akhir']  → Z × 100 (%)
-               $hasil['skala_prioritas']  → "Prioritas I" … "Prioritas IV"
-               $hasil['status_kelayakan'] → "Sangat Layak" / "Layak" / …
-               $hasil['interpretasi']     → keterangan
-             Per rule:
-               $rule['rule_id'], $rule['alpha'], $rule['k'], $rule['alpha_x_k']
         ════════════════════════════════════════════════════════════════ --}}
         <div class="card shadow-sm border-0 mb-4 border-top border-success border-3">
             <div class="card-header bg-white border-bottom py-3">
@@ -342,6 +354,11 @@
                                     <span class="badge fs-6 {{ $isLayak ? 'bg-success' : 'bg-danger' }}">
                                         {{ $hasil['status_kelayakan'] }}
                                     </span>
+                                    @if($hasil['is_fallback'])
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="bx bx-error-circle me-1"></i>Estimasi Fallback
+                                        </span>
+                                    @endif
                                 </div>
                                 <div class="text-end ms-3">
                                     <div class="display-5 fw-bold mb-0 {{ $textClass }}">
@@ -377,7 +394,7 @@
                 <div class="mt-4 pt-4 border-top">
                     <h6 class="fw-bold text-uppercase text-muted mb-3">
                         <i class="bx bx-calculator me-1"></i>
-                        Rincian Nilai Kontribusi Rule
+                        Rincian Nilai Kontribusi Rule (Hanya Rule Aktif & Cocok)
                     </h6>
                     <div class="table-responsive">
                         <table class="table table-sm table-striped border">
@@ -391,22 +408,28 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $totalAlphaZ = $hasil['sum_alpha_z'];
+                                @endphp
                                 @foreach($hasil['rules'] as $rule)
-                                <tr class="text-center">
-                                    <td class="fw-bold text-success">{{ $rule['rule_id'] }}</td>
-                                    <td>{{ number_format($rule['alpha'], 4) }}</td>
-                                    <td>{{ number_format($rule['k'], 2) }}</td>
-                                    <td>{{ number_format($rule['alpha_x_k'], 4) }}</td>
-                                    <td>
-                                        @if($hasil['sum_alpha_z'] > 0)
-                                            {{ number_format(($rule['alpha_x_k'] / $hasil['sum_alpha_z']) * 100, 1) }}%
-                                        @else
-                                            0%
-                                        @endif
-                                    </td>
-                                </tr>
+                                    @if($rule['flag_aktif'] == 1 && $rule['status'] == 'cocok')
+                                    <tr class="text-center">
+                                        <td class="fw-bold text-success">{{ $rule['rule_id'] }}</td>
+                                        <td>{{ number_format($rule['alpha'], 4) }}</td>
+                                        <td>{{ number_format($rule['k'], 2) }}</td>
+                                        <td>{{ number_format($rule['alpha_x_k'], 4) }}</td>
+                                        <td>
+                                            @if($totalAlphaZ > 0)
+                                                {{ number_format(($rule['alpha_x_k'] / $totalAlphaZ) * 100, 1) }}%
+                                            @else
+                                                0%
+                                            @endif
+                                        </td>
+                                    </tr>
+                                    @endif
                                 @endforeach
                             </tbody>
+                            @if($hasil['sum_alpha'] > 0)
                             <tfoot class="table-light fw-bold text-center">
                                 <tr>
                                     <td>TOTAL</td>
@@ -416,6 +439,7 @@
                                     <td>100%</td>
                                 </tr>
                             </tfoot>
+                            @endif
                         </table>
                     </div>
 
@@ -424,6 +448,10 @@
                         Nilai \(z^* = {{ number_format($hasil['z'], 4) }}\) dikonversi ke skala persentase menjadi
                         <strong>{{ number_format($hasil['skor_akhir'], 2) }}%</strong>
                         sebagai dasar penentuan tingkat kelayakan sesuai Tabel Skala Prioritas.
+                        @if($hasil['is_fallback'])
+                        <br><br>
+                        <i class="bx bx-info-circle"></i> <strong>Catatan Fallback:</strong> Karena Σα = 0, tidak ada rule aktif yang cocok. Nilai Z dihitung dari rata-rata μ maksimum tiap kriteria. Hasil ini bersifat estimasi.
+                        @endif
                     </div>
                 </div>
 
@@ -484,14 +512,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const { tipe, a, b, c, d } = p;
         switch (tipe) {
             case 'bahu_kiri':
-                // μ=1 saat x≤a, turun ke 0 di b  → sesuai naskah: Sempit (a=1.5, b=3.5)
-                return [{ x: 0, y: 1 }, { x: a, y: 1 }, { x: b, y: 0 }, { x: maxX, y: 0 }];
+                // μ=1 saat x≤c, turun ke 0 di d
+                return [{ x: 0, y: 1 }, { x: c, y: 1 }, { x: d, y: 0 }, { x: maxX, y: 0 }];
             case 'bahu_kanan':
-                // μ=0 saat x≤a, naik ke 1 di b → sesuai naskah: Luas (a=5, b=7)
+                // μ=0 saat x≤a, naik ke 1 di b
                 return [{ x: 0, y: 0 }, { x: a, y: 0 }, { x: b, y: 1 }, { x: maxX, y: 1 }];
             case 'segitiga':
+                // a → b puncak, b = c, turun ke d
+                return [{ x: a, y: 0 }, { x: b, y: 1 }, { x: d, y: 0 }];
             case 'trapesium':
-                // naik a→b, puncak b–c, turun c→d
                 return [{ x: a, y: 0 }, { x: b, y: 1 }, { x: c, y: 1 }, { x: d, y: 0 }];
             default:
                 return [];
@@ -500,15 +529,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ─────────────────────────────────────────────────────────────────────────
     // Render chart tiap kriteria dari data Blade
-    // Menggunakan $k['semua_himpunan'] agar kurva tampil lengkap
-    //   (termasuk himpunan yang tidak aktif pada input saat ini)
     // ─────────────────────────────────────────────────────────────────────────
     @foreach($hasil['fuzzifikasi'] as $k)
     (function () {
         const ctx = document.getElementById('chart-{{ $k['kode'] }}');
         if (!ctx) return;
 
-        // Semua himpunan: aktif + tidak aktif
         const semuaHimpunan = @json($k['semua_himpunan']);
         const inputVal      = @json($k['input']);
         const jenis         = @json($k['jenis']);
@@ -542,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // ── KONTINU: line chart ───────────────────────────────────────────
-        // Hitung maxX dari semua batas parameter
         let maxX = 0;
         semuaHimpunan.forEach(h => {
             if (h.params) {
@@ -551,7 +576,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         maxX = maxX > 0 ? maxX * 1.15 : 100;
 
-        // Nilai input crisp (untuk garis vertikal anotasi)
         const xInput = parseFloat(String(inputVal).replace(/[^0-9.]/g, '')) || null;
 
         const datasets = semuaHimpunan
@@ -567,9 +591,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 tension: 0,
             }));
 
-        // Anotasi garis vertikal pada nilai input
         const annotations = {};
-        if (xInput !== null && !isNaN(xInput)) {
+        if (xInput !== null && !isNaN(xInput) && xInput >= 0 && xInput <= maxX) {
             annotations['inputLine'] = {
                 type: 'line',
                 xMin: xInput,

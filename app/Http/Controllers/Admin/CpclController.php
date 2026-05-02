@@ -265,34 +265,61 @@ class CpclController extends Controller
 
     public function showVerification($id)
     {
-        $role     = $this->getRolePrefix();
-        $cpcl     = $this->secureQuery()->findOrFail($id);
+        $role = $this->getRolePrefix();
+        
+        // Gunakan 'penilaian' untuk Eager Loading
+        $cpcl = $this->secureQuery()
+            ->with(['Penilaian', 'alamat']) 
+            ->findOrFail($id);
+
         $kriteria = Kriteria::with('subKriteria')->get();
         
         return view("$role.data-cpcl.verifikasi", compact('cpcl', 'kriteria'));
     }
 
     public function verify(Request $request, $id)
-    {
-        $role = $this->getRolePrefix();
-        
-        // Cek otorisasi bidang sebelum proses verifikasi
-        $this->secureQuery()->findOrFail($id);
+{
+    $role = $this->getRolePrefix();
+    
+    // 1. Cek otorisasi (Akan melempar 404 jika ID tidak ditemukan atau tidak sesuai bidang)
+    $this->secureQuery()->findOrFail($id);
 
-        $request->validate([
-            'nilai'               => 'required|array',
-            'status'              => 'required|in:terverifikasi,ditolak,baru,perlu_perbaikan',
-            'catatan_verifikator' => 'nullable|string|max:500',
+    // 2. Validasi input
+    $request->validate([
+        'nilai'               => 'required|array',
+        'nilai.*'             => 'required', // Tambahan: Memastikan setiap kriteria di dalam array ada isinya
+        'status'              => 'required|in:terverifikasi,ditolak,baru,perlu_perbaikan',
+        'catatan_verifikator' => 'nullable|string|max:500',
+    ], [
+        // Custom message agar user tahu kriteria mana yang belum diisi
+        'nilai.*.required' => 'Semua nilai kriteria wajib diisi sebelum verifikasi.',
+    ]);
+
+    try {
+        // 3. Eksekusi Service (Logika updateOrInsert ada di sini)
+        $this->cpclService->verifyCpcl($id, $request->all());
+
+        // 4. Redirect dengan feedback sukses
+        return redirect()
+            ->route("$role.cpcl.index")
+            ->with('success', 'Data verifikasi CPCL berhasil diperbarui');
+
+    } catch (\Throwable $e) {
+        // 5. Logging Error yang lebih detail untuk admin/developer
+        Log::error('CPCL VERIFICATION FAILED', [
+            'cpcl_id' => $id,
+            'user_id' => auth()->id(),
+            'message' => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine()
         ]);
 
-        try {
-            $this->cpclService->verifyCpcl($id, $request->all());
-            return redirect()->route("$role.cpcl.index")->with('success', 'Status CPCL berhasil diperbarui');
-        } catch (\Throwable $e) {
-            Log::error('CPCL VERIFICATION FAILED: ' . $e->getMessage());
-            return back()->withInput()->with('error', 'Gagal memverifikasi data');
-        }
+        // Kembali ke halaman sebelumnya dengan input yang sudah diketik user
+        return back()
+            ->withInput()
+            ->with('error', 'Gagal memverifikasi data. Silakan coba lagi atau hubungi admin.');
     }
+}
 
     public function import(Request $request)
 {
