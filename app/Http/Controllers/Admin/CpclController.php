@@ -370,23 +370,33 @@ class CpclController extends Controller
             return back()->with('error', 'Gagal menghapus data');
         }
     }
-
-    public function truncate()
+public function truncate()
 {
-    if (!in_array(auth()->user()->role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
+    $user = auth()->user();
+    $role = $user->role;
+
+    // Pastikan hanya role tertentu yang bisa menghapus massal
+    if (!in_array($role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
         return redirect()->back()->with('error', 'Anda tidak memiliki akses.');
     }
 
     try {
-        // 1. Physical file deletion (Do this before DB changes so we still have the paths)
-        $allCpcl = \App\Models\Cpcl::withTrashed()
-            ->select('file_proposal', 'file_ktp', 'file_sk', 'foto_lahan')
-            ->get();
+        // 1. Tentukan query dasar untuk mengambil data yang akan dihapus
+        $query = Cpcl::query();
+        if ($role === 'admin_pangan') {
+            $query->where('bidang', 'PANGAN');
+        } elseif ($role === 'admin_hartibun') {
+            $query->where('bidang', 'HARTIBUN');
+        }
+        // Jika role 'admin' -> $query tidak diberi filter (semua data)
 
-        foreach ($allCpcl as $cpcl) {
-            $storage = \Storage::disk('public');
+        // 2. Ambil data yang akan dihapus (untuk menghapus file fisik)
+        $cpcls = $query->get(['id', 'file_proposal', 'file_ktp', 'file_sk', 'foto_lahan']);
+
+        // 3. Hapus file fisik dari storage
+        foreach ($cpcls as $cpcl) {
+            $storage = Storage::disk('public');
             $files = ['file_proposal', 'file_ktp', 'file_sk', 'foto_lahan'];
-            
             foreach ($files as $file) {
                 if ($cpcl->$file && $storage->exists($cpcl->$file)) {
                     $storage->delete($cpcl->$file);
@@ -394,24 +404,34 @@ class CpclController extends Controller
             }
         }
 
-        // 2. Database Cleanup
-        // We use a try-finally or just direct execution because TRUNCATE auto-commits.
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
-        
-        \DB::table('hasil_fuzzy')->truncate();
-        \DB::table('cpcl_penilaian')->truncate();
-        \DB::table('cpcl')->truncate();
-        
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        // 4. Hapus data dari database (perhatikan foreign key)
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-        return redirect()->route('admin.cpcl.index')->with('success', 'Data dan file berhasil dihapus.');
+        // Hapus dari tabel relasi terlebih dahulu (sesuaikan dengan struktur Anda)
+        // Misal: cpcl_penilaian, hasil_fuzzy, dll.
+        if ($role === 'admin') {
+            // Admin super: hapus semua
+            DB::table('hasil_fuzzy')->truncate();
+            DB::table('cpcl_penilaian')->truncate();
+            DB::table('cpcl')->truncate();
+        } else {
+            // Admin bidang: hapus hanya data yang sesuai role
+            $ids = $cpcls->pluck('id')->toArray();
+            if (!empty($ids)) {
+                DB::table('hasil_fuzzy')->whereIn('cpcl_id', $ids)->delete();
+                DB::table('cpcl_penilaian')->whereIn('cpcl_id', $ids)->delete();
+                DB::table('cpcl')->whereIn('id', $ids)->delete();
+            }
+        }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        return redirect()->route('admin.cpcl.index')->with('success', 'Data sesuai bidang berhasil dihapus.');
 
     } catch (\Exception $e) {
-        // Ensure keys are turned back on even if it fails
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-        \Log::error("TRUNCATE CPCL ERROR: " . $e->getMessage());
-
-        return redirect()->back()->with('error', 'Gagal: ' . $e->getMessage());
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        Log::error("DELETE BY ROLE ERROR: " . $e->getMessage());
+        return redirect()->back()->with('error', 'Gagal menghapus data: ' . $e->getMessage());
     }
 }
 }

@@ -237,73 +237,95 @@
                         </div>
 
                         <div class="p-4 pt-3">
-                            @if(isset($kriteria) && $kriteria->count() > 0)
-                                <div class="alert alert-info border-0 mb-4 d-flex align-items-center shadow-sm">
-                                    <i class="bi bi-info-circle-fill me-2 fs-4"></i>
-                                    <small>Nilai yang tampil adalah nilai tersimpan (jika sudah diverifikasi) atau nilai awal dari UPTD.</small>
-                                </div>
+    @if(isset($kriteria) && $kriteria->count() > 0)
+        <div class="alert alert-info border-0 mb-4 d-flex align-items-center shadow-sm">
+            <i class="bi bi-info-circle-fill me-2 fs-4"></i>
+            <small>Nilai yang tampil adalah nilai tersimpan (jika sudah diverifikasi) atau nilai awal dari UPTD.</small>
+        </div>
 
-                                <div class="kriteria-grid">
-                                    @foreach($kriteria as $item)
-                                        @php
-                                            // Mencari nilai yang sudah tersimpan di tabel penilaian
-                                            $existing = $cpcl->penilaian->where('kriteria_id', $item->id)->first();
-                                            $savedValue = $existing ? $existing->nilai : null;
-                                            // Prioritas: Nilai tersimpan > Nilai mapping UPTD > Kosong
-                                            $currentValue = $savedValue ?? ($cpcl->{$item->mapping_field} ?? '');
-                                        @endphp
-                                        <div class="p-3 border rounded-3 bg-white shadow-none h-100 position-relative">
-                                            <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                                                <div class="fw-bold small text-dark">
-                                                    {{ $item->kode_kriteria }} - {{ $item->nama_kriteria }}
-                                                </div>
-                                                <div class="d-flex gap-1">
-                                                    @if($savedValue !== null)
-                                                        <span class="badge bg-label-warning text-xxs" style="font-size: 0.6rem;">TEREDIT</span>
-                                                    @endif
-                                                    <span class="badge {{ $item->jenis_kriteria == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
-                                                        {{ strtoupper($item->jenis_kriteria) }}
-                                                    </span>
-                                                </div>
-                                            </div>
+        <div class="kriteria-grid">
+            @foreach($kriteria as $item)
+                @php
+                    // Cek apakah kriteria ini adalah "Kelengkapan Dokumen"
+                    // Sesuaikan kondisi berikut dengan data di database Anda
+                    $isDokumen = str_contains(strtolower($item->nama_kriteria), 'dokumen') 
+                                 || $item->kode_kriteria === 'DOK';
 
-                                            @if($item->jenis_kriteria == 'kontinu')
-                                                <div>
-                                                    <label class="form-label text-xxs fw-bold text-muted mb-1">
-                                                        Input Verifikasi (Data UPTD: {{ $cpcl->{$item->mapping_field} ?? '0' }})
-                                                    </label>
-                                                    <div class="input-group input-group-sm">
-                                                        <input type="number" step="0.01" name="nilai[{{ $item->id }}]" 
-                                                               value="{{ $currentValue }}" 
-                                                               class="form-control border-primary-subtle" required>
-                                                    </div>
-                                                </div>
-                                            @else
-                                                <div>
-                                                    <label class="form-label text-xxs fw-bold text-muted mb-1">
-                                                        Pilih Kategori (Data UPTD: {{ $cpcl->{$item->mapping_field} ?? '-' }})
-                                                    </label>
-                                                    <select name="nilai[{{ $item->id }}]" class="form-select form-select-sm border-success-subtle" required>
-                                                        <option value="">-- Verifikasi Kategori --</option>
-                                                        @foreach($item->subKriteria as $sub)
-                                                            <option value="{{ $sub->nama_sub_kriteria }}" 
-                                                                {{ strtolower($currentValue) == strtolower($sub->nama_sub_kriteria) ? 'selected' : '' }}>
-                                                                {{ $sub->nama_sub_kriteria }} 
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="text-center py-4 bg-label-warning rounded">
-                                    <i class="bi bi-exclamation-circle fs-4"></i>
-                                    <p class="mb-0 mt-2 fw-bold">Kriteria penilaian belum dikonfigurasi.</p>
-                                </div>
-                            @endif
+                    // Mencari nilai yang sudah tersimpan di tabel penilaian
+                    $existing = $cpcl->penilaian->where('kriteria_id', $item->id)->first();
+                    $savedValue = $existing ? $existing->nilai : null;
+
+                    // Untuk kriteria dokumen, JANGAN ambil data dari UPTD (nilai awal dikosongkan)
+                    // Untuk kriteria lain, prioritas: nilai tersimpan > data UPTD > kosong
+                    if ($isDokumen) {
+                        $currentValue = $savedValue ?? '';  // tidak pakai data UPTD
+                    } else {
+                        $currentValue = $savedValue ?? ($cpcl->{$item->mapping_field} ?? '');
+                    }
+                @endphp
+
+                <div class="p-3 border rounded-3 bg-white shadow-none h-100 position-relative">
+                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                        <div class="fw-bold small text-dark">
+                            {{ $item->kode_kriteria }} - {{ $item->nama_kriteria }}
                         </div>
+                        <div class="d-flex gap-1">
+                            @if($savedValue !== null)
+                                <span class="badge bg-label-warning text-xxs" style="font-size: 0.6rem;">TEREDIT</span>
+                            @endif
+                            <span class="badge {{ $item->jenis_kriteria == 'kontinu' ? 'bg-label-primary' : 'bg-label-success' }} text-xxs px-2" style="font-size: 0.65rem;">
+                                {{ strtoupper($item->jenis_kriteria) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    @if($item->jenis_kriteria == 'kontinu')
+                        <div>
+                            <label class="form-label text-xxs fw-bold text-muted mb-1">
+                                Input Verifikasi
+                                @if(!$isDokumen)
+                                    <span class="text-muted fw-normal">
+                                        (Data UPTD: {{ $cpcl->{$item->mapping_field} ?? '0' }})
+                                    </span>
+                                @endif
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <input type="number" step="0.01" name="nilai[{{ $item->id }}]" 
+                                       value="{{ $currentValue }}" 
+                                       class="form-control border-primary-subtle" required>
+                            </div>
+                        </div>
+                    @else
+                        <div>
+                            <label class="form-label text-xxs fw-bold text-muted mb-1">
+                                Pilih Kategori
+                                @if(!$isDokumen)
+                                    <span class="text-muted fw-normal">
+                                        (Data UPTD: {{ $cpcl->{$item->mapping_field} ?? '-' }})
+                                    </span>
+                                @endif
+                            </label>
+                            <select name="nilai[{{ $item->id }}]" class="form-select form-select-sm border-success-subtle" required>
+                                <option value="">-- Verifikasi Kategori --</option>
+                                @foreach($item->subKriteria as $sub)
+                                    <option value="{{ $sub->nama_sub_kriteria }}" 
+                                        {{ strtolower($currentValue) == strtolower($sub->nama_sub_kriteria) ? 'selected' : '' }}>
+                                        {{ $sub->nama_sub_kriteria }} 
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @else
+        <div class="text-center py-4 bg-label-warning rounded">
+            <i class="bi bi-exclamation-circle fs-4"></i>
+            <p class="mb-0 mt-2 fw-bold">Kriteria penilaian belum dikonfigurasi.</p>
+        </div>
+    @endif
+</div>
                     </div>
                 </div>
 
