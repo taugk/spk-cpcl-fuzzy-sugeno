@@ -109,7 +109,7 @@
                         <tbody>
                             @foreach($hasilRanking as $index => $h)
                                 <tr class="text-center">
-                                    <td><span class="badge rounded-pill bg-label-dark fw-bold">{{ $h->ranking ?? $index + 1 }}</span></td>
+                                    <td><span class="badge rounded-pill bg-label-dark fw-bold">{{ $loop->iteration }}</span></td>
                                     <td class="text-start">
                                         <div class="fw-bold text-dark">{{ $h->cpcl->nama_kelompok }}</div>
                                         <div class="small text-muted">Ketua: {{ $h->cpcl->nama_ketua }}</div>

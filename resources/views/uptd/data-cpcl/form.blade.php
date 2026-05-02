@@ -219,7 +219,7 @@
                                 <div class="col-md-12">
                                     <label class="form-label fw-semibold mb-2">Status Kepemilikan Lahan</label>
                                     <div class="d-flex flex-wrap gap-3 p-3 border rounded @error('status_lahan') border-danger @enderror">
-                                        @foreach(['milik' => 'Milik Sendiri', 'sewa' => 'Sewa Lahan', 'garapan' => 'Lahan Garapan'] as $val => $label)
+                                        @foreach(['milik' => 'Milik Sendiri', 'sewa' => 'Sewa Lahan', 'tidak_memiliki' => 'Tidak Memiliki Lahan'] as $val => $label)
                                             <div class="form-check custom-option custom-option-basic">
                                                 <input class="form-check-input" type="radio" name="status_lahan" id="lahan_{{ $val }}" value="{{ $val }}"
                                                        {{ old('status_lahan', $cpcl->status_lahan ?? '') == $val ? 'checked' : '' }}

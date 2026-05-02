@@ -251,7 +251,7 @@ class CpclController extends Controller
             'luas_lahan'    => 'required|numeric|min:0',
             'lama_berdiri'  => 'required|integer|min:0',
             'hasil_panen'   => 'required|numeric|min:0',
-            'status_lahan'  => 'required|in:milik,sewa,bagi_hasil',
+            'status_lahan'  => 'required|in:milik,sewa,tidak_memiliki',
             'file_proposal' => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf|max:2048',
             'file_ktp'      => ($isUpdate ? 'nullable' : 'required') . '|mimes:pdf,jpg,jpeg,png|max:2048',
             'file_sk'       => 'nullable|mimes:pdf|max:2048',

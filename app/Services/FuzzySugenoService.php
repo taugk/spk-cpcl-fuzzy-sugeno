@@ -61,15 +61,15 @@ class FuzzySugenoService
     // =========================================================================
     // RULE BASE NASKAH (R1–R16) - SEMUA SUDAH LOWERCASE
     // =========================================================================
-    'R1'  => ['c1' => 'sempit',  'c2' => 'bagi hasil',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
+    'R1'  => ['c1' => 'sempit',  'c2' => 'tidak memiliki',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
     'R2'  => ['c1' => 'sempit',  'c2' => 'sewa',          'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
     'R3'  => ['c1' => 'sempit',  'c2' => 'milik sendiri', 'c3' => 'lama',        'c4' => 'sedang', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
     'R4'  => ['c1' => 'sedang',  'c2' => 'sewa',          'c3' => 'lama',        'c4' => 'sedang', 'c5' => 'lengkap',        'k' => 0.25, 'aktif' => 1],
     'R5'  => ['c1' => 'sedang',  'c2' => 'milik sendiri', 'c3' => 'lama',        'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.75, 'aktif' => 1],
     'R6'  => ['c1' => 'luas',    'c2' => 'milik sendiri', 'c3' => 'sangat lama', 'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.75, 'aktif' => 1],
     'R7'  => ['c1' => 'luas',    'c2' => 'sewa',          'c3' => 'lama',        'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.75, 'aktif' => 1],
-    'R8'  => ['c1' => 'luas',    'c2' => 'bagi hasil',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
-    'R9'  => ['c1' => 'sedang',  'c2' => 'bagi hasil',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
+    'R8'  => ['c1' => 'luas',    'c2' => 'tidak memiliki',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
+    'R9'  => ['c1' => 'sedang',  'c2' => 'tidak memiliki',    'c3' => 'baru',        'c4' => 'rendah', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
     'R10' => ['c1' => 'sedang',  'c2' => 'milik sendiri', 'c3' => 'lama',        'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.75, 'aktif' => 1],
     'R11' => ['c1' => 'sedang',  'c2' => 'milik sendiri', 'c3' => 'baru',        'c4' => 'sedang', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
     'R12' => ['c1' => 'luas',    'c2' => 'sewa',          'c3' => 'baru',        'c4' => 'sedang', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
@@ -119,8 +119,8 @@ class FuzzySugenoService
     'R43' => ['c1' => 'luas',    'c2' => 'sewa', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.75, 'aktif' => 1],
     
     // C5 = Sangat Lengkap + C2 = bagi hasil
-    'R44' => ['c1' => 'sempit',  'c2' => 'bagi hasil', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
-    'R45' => ['c1' => 'sedang',  'c2' => 'bagi hasil', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+    'R44' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+    'R45' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
 
     // =========================================================================
     // RULE TAMBAHAN UNTUK C5 = 'LENGKAP'
@@ -150,8 +150,8 @@ class FuzzySugenoService
     'R60' => ['c1' => 'luas',    'c2' => 'sewa', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'lengkap', 'k' => 0.75, 'aktif' => 1],
     
     // C5 = Lengkap + C2 = bagi hasil
-    'R61' => ['c1' => 'sempit',  'c2' => 'bagi hasil', 'c3' => 'lama', 'c4' => 'tinggi', 'c5' => 'lengkap', 'k' => 0.50, 'aktif' => 1],
-    'R62' => ['c1' => 'sedang',  'c2' => 'bagi hasil', 'c3' => 'lama', 'c4' => 'tinggi', 'c5' => 'lengkap', 'k' => 0.50, 'aktif' => 1],
+    'R61' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'lama', 'c4' => 'tinggi', 'c5' => 'lengkap', 'k' => 0.50, 'aktif' => 1],
+    'R62' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama', 'c4' => 'tinggi', 'c5' => 'lengkap', 'k' => 0.50, 'aktif' => 1],
 
     // =========================================================================
     // RULE TAMBAHAN UNTUK C5 = 'TIDAK LENGKAP'
@@ -176,7 +176,41 @@ class FuzzySugenoService
     'R72' => ['c1' => 'sempit',  'c2' => 'sewa', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
     'R73' => ['c1' => 'sedang',  'c2' => 'sewa', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
     
-    // C5 = Tidak Lengkap + C2 = bagi hasil (sudah ada di R1,R2,R8,R9,R15)
+    'R77' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R78' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R79' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'tidak lengkap',  'k' => 0.25, 'aktif' => 1],
+'R80' => ['c1' => 'sempit', 'c2' => 'tidak memiliki', 'c3' => 'baru', 'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.50, 'aktif' => 1],
+    'R81' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R82' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R83' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R84' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R85' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R86' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R87' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R88' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+'R89' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'tidak lengkap', 'k' => 0.25, 'aktif' => 1],
+
+// Kombinasi dengan C5 = 'lengkap' (sedang)
+'R90' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R91' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R92' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R93' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R94' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R95' => ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R96' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R97' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+'R98' => ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'lengkap',        'k' => 0.50, 'aktif' => 1],
+
+// Kombinasi dengan C5 = 'sangat lengkap' (cenderung lebih tinggi, tapi karena tidak memiliki, maksimal 0.50)
+'R99' => ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R100'=> ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R101'=> ['c1' => 'sempit',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R102'=> ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R103'=> ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R104'=> ['c1' => 'sedang',  'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R105'=> ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'baru',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R106'=> ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'sedang', 'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
+'R107'=> ['c1' => 'luas',    'c2' => 'tidak memiliki', 'c3' => 'lama',   'c4' => 'tinggi', 'c5' => 'sangat lengkap', 'k' => 0.50, 'aktif' => 1],
 ];
 
     // =========================================================================
@@ -672,7 +706,7 @@ class FuzzySugenoService
         // Kepemilikan Lahan (C2)
         'sewa'           => ['sewa', 'garap', 'sewa/garap', 'sewa garap'],
         'milik sendiri'  => ['milik sendiri', 'milik sendiri', 'milik sendiri bersertifikat', 'milik'],
-        'bagi hasil'     => ['bagi hasil', 'tidak punya', 'tidak punya lahan', 'bagihasil'],
+        'tidak memiliki'     => ['tidak memiliki', 'tidak punya', 'tidak punya lahan', 'bagihasil'],
         
         // Kelengkapan Dokumen (C5)
         'lengkap'        => ['lengkap', 'dokumen lengkap'],
@@ -706,31 +740,30 @@ class FuzzySugenoService
 }
 
     private static function getSkalaPrioritas(float $z): array
-    {
-        return match (true) {
-            $z >= 0.81 => [
-                'prioritas'    => 'Prioritas I',
-                'status'       => 'Sangat Diprioritaskan',
-                'interpretasi' => 'Sangat Diprioritaskan',
-            ],
-            $z >= 0.61 => [
-                'prioritas'    => 'Prioritas II',
-                'status'       => 'Diprioritaskan',
-                'interpretasi' => 'Diprioritaskan',
-            ],
-            $z >= 0.41 => [
-                'prioritas'    => 'Prioritas III',
-                'status'       => 'Dipertimbangkan',
-                'interpretasi' => 'Dipertimbangkan',
-            ],
-            default => [
-                'prioritas'    => 'Prioritas IV',
-                'status'       => 'Tidak Diprioritaskan',
-                'interpretasi' => 'Tidak Diprioritaskan',
-            ],
-        };
-    }
-
+{
+    return match (true) {
+        $z >= 0.81 => [
+            'prioritas'    => 'Prioritas I',
+            'status'       => 'Sangat Diprioritaskan',
+            'interpretasi' => 'Sangat Diprioritaskan',
+        ],
+        $z >= 0.61 => [
+            'prioritas'    => 'Prioritas II',
+            'status'       => 'Diprioritaskan',
+            'interpretasi' => 'Diprioritaskan',
+        ],
+        $z >= 0.41 => [
+            'prioritas'    => 'Prioritas III',
+            'status'       => 'Dipertimbangkan',
+            'interpretasi' => 'Dipertimbangkan',
+        ],
+        default => [
+            'prioritas'    => 'Prioritas IV',
+            'status'       => 'Tidak Diprioritaskan',
+            'interpretasi' => 'Tidak Diprioritaskan',
+        ],
+    };
+}
     // =========================================================================
     // PUBLIC: Hitung semua CPCL terverifikasi + ranking
     // =========================================================================
