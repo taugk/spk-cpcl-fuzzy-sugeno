@@ -179,7 +179,7 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    @if(Auth::user()->role == 'admin')
+                                    @if(Auth::user()->role != 'admin')
                                     <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Verifikasi Sekarang">
                                         <i class="bx bx-shield-check me-1"></i> Verifikasi
                                     </a>
