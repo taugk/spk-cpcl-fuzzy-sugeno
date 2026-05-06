@@ -174,16 +174,15 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    {{-- TOMBOL EDIT VERIFIKASI (SEMUA ROLE) --}}
-                                    @if($row->status !== 'baru')
-                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Edit Verifikasi">
-                                            <i class="bx bx-shield-check"></i> Edit Verifikasi
-                                        </a>
-                                    @else
-                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-warning" title="Verifikasi Data">
-                                            <i class="bx bx-check-shield"></i> Verifikasi
-                                        </a>
-                                    @endif
+                                    @if(Auth::user()->role != 'admin')
+    <a href="{{ route('admin.cpcl.verify', $row->id) }}"
+       class="btn btn-sm {{ $row->status !== 'baru' ? 'btn-success' : 'btn-warning' }}"
+       title="{{ $row->status !== 'baru' ? 'Edit Verifikasi' : 'Verifikasi Data' }}">
+       
+        <i class="bx {{ $row->status !== 'baru' ? 'bx-shield-check' : 'bx-check-shield' }}"></i>
+        {{ $row->status !== 'baru' ? 'Edit Verifikasi' : 'Verifikasi' }}
+    </a>
+@endif
 
                                     {{-- TOMBOL DETAIL (SEMUA ROLE) --}}
                                     <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
