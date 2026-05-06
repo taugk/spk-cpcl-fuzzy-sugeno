@@ -134,32 +134,25 @@
                             </td>
                             <td>
 
-@php
+                            @php
+                                $prioBadge = match($h->skala_prioritas) {
+                                    'Prioritas I' => 'bg-success',
+                                    'Prioritas II' => 'bg-primary',
+                                    'Prioritas III' => 'bg-secondary',
+                                    default => 'bg-secondary',
+                                };
+                            @endphp
 
-$prioBadge = match($h->skala_prioritas) {
+                            <span class="badge {{ $prioBadge }} px-3">{{ $h->skala_prioritas }}</span>
 
-'Prioritas I' => 'bg-success',
-
-'Prioritas II' => 'bg-primary',
-
-'Prioritas III' => 'bg-warning text-dark',
-
-default => 'bg-secondary',
-
-};
-
-@endphp
-
-<span class="badge {{ $prioBadge }} px-3">{{ $h->skala_prioritas }}</span>
-
-</td>
+                            </td>
                             <td>
                                 @php
                                     $statusClass = match($h->status_kelayakan) {
-                                        'Sangat Layak'   => 'text-success',
-                                        'Diprioritaskan' => 'text-primary',
-                                        'Dipertimbangkan' => 'text-warning',
-                                        default          => 'text-muted',
+                                        'Diprioritaskan' => 'text-success',
+                                        'Dipertimbangkan' => 'text-primary',
+                                        'Tidak Diprioritaskan' => 'text-secondary',
+                                        default => 'text-muted',
                                     };
                                 @endphp
                                 <span class="{{ $statusClass }} fw-bold small text-uppercase">{{ $h->status_kelayakan }}</span>
@@ -178,61 +171,55 @@ default => 'bg-secondary',
 </div>
 
         {{-- FOOTER / REFERENSI SKALA --}}
-        <div class="row mt-4 no-print">
-            <div class="col-md-8">
-                <div class="card border-0 shadow-sm border-start border-success border-3">
-                    <div class="card-body p-3">
-                        <h6 class="fw-bold mb-3"><i class="bx bx-info-square me-2 text-dark"></i>Legenda Klasifikasi Kelayakan (Sugeno)</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered small mb-0">
-                                <thead class="table-light text-center text-uppercase">
-                                    <tr>
-                                        <th style="width: 25%;">Ambang Batas (\(z\))</th>
-                                        <th>Kategori</th>
-                                        <th>Status</th>
-                                        <th>Interpretasi</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td class="text-center fw-bold">\(z \ge 0.81\)</td>
-                                        <td class="text-center"><span class="badge bg-success">Prioritas I</span></td>
-                                        <td class="fw-bold text-success">Sangat Layak</td>
-                                        <td class="text-muted">Sangat Diprioritaskan</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-center fw-bold">\(0.70 \le z < 0.81\)</td>
-                                        <td class="text-center"><span class="badge bg-primary">Prioritas II</span></td>
-                                        <td class="fw-bold text-primary">Diprioritaskan</td>
-                                        <td class="text-muted">Diprioritaskan</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-center fw-bold">\(0.55 \le z < 0.70\)</td>
-                                        <td class="text-center"><span class="badge bg-warning text-dark">Prioritas III</span></td>
-                                        <td class="fw-bold text-warning">Dipertimbangkan</td>
-                                        <td class="text-muted">Dipertimbangkan</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-center fw-bold">\(z < 0.55\)</td>
-                                        <td class="text-center"><span class="badge bg-secondary">Prioritas IV</span></td>
-                                        <td class="fw-bold text-secondary">Tidak Diprioritaskan</td>
-                                        <td class="text-muted">Tidak Diprioritaskan</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="alert alert-secondary border-0 shadow-sm small h-100 mb-0">
-                    <h6 class="fw-bold"><i class="bx bx-help-circle me-1"></i> Catatan Sistem</h6>
-                    <p class="mb-0 text-justify">
-                        Ranking dihitung secara otomatis berdasarkan nilai Defuzzifikasi (Z) tertinggi. Interpretasi status kelayakan mengacu pada Peraturan Standar Teknis yang telah dikonfigurasi pada sistem pakar.
-                    </p>
+<div class="row mt-4 no-print">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm border-start border-success border-3">
+            <div class="card-body p-3">
+                <h6 class="fw-bold mb-3"><i class="bx bx-info-square me-2 text-dark"></i>Legenda Klasifikasi Kelayakan (Sugeno Orde Nol)</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered small mb-0">
+                        <thead class="table-light text-center text-uppercase">
+                            <tr>
+                                <th style="width: 25%;">Ambang Batas (Z)</th>
+                                <th>Skala Prioritas</th>
+                                <th>Status</th>
+                                <th>Interpretasi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="text-center fw-bold">Z > 0.60</td>
+                                <td class="text-center"><span class="badge bg-success">Prioritas I</span></td>
+                                <td class="fw-bold text-success">Diprioritaskan</td>
+                                <td class="text-muted">Sangat Layak untuk diprioritaskan</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center fw-bold">0.41 ≤ Z ≤ 0.60</td>
+                                <td class="text-center"><span class="badge bg-primary">Prioritas II</span></td>
+                                <td class="fw-bold text-primary">Dipertimbangkan</td>
+                                <td class="text-muted">Layak dengan pertimbangan khusus</td>
+                            </tr>
+                            <tr>
+                                <td class="text-center fw-bold">Z < 0.41</td>
+                                <td class="text-center"><span class="badge bg-secondary">Prioritas III</span></td>
+                                <td class="fw-bold text-secondary">Tidak Diprioritaskan</td>
+                                <td class="text-muted">Belum memenuhi kriteria prioritas</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
+    </div>
+    <div class="col-md-4">
+        <div class="alert alert-secondary border-0 shadow-sm small h-100 mb-0">
+            <h6 class="fw-bold"><i class="bx bx-help-circle me-1"></i> Catatan Sistem</h6>
+            <p class="mb-0 text-justify">
+                Ranking dihitung secara otomatis berdasarkan nilai Defuzzifikasi (Z) tertinggi. Interpretasi status kelayakan mengacu pada Peraturan Standar Teknis yang telah dikonfigurasi pada sistem pakar dengan metode Fuzzy Sugeno Orde Nol.
+            </p>
+        </div>
+    </div>
+</div>
 
     </div>
 </div>

@@ -33,17 +33,15 @@ use Illuminate\Support\Collection;
  *
  * 3. Defuzzifikasi – Weighted Average (Sugeno):
  *    Z = Σ(αᵢ × kᵢ) / Σ(αᵢ)
- *    kᵢ (nilai konsekuen rule) sesuai naskah:
- *      Tidak Layak      = 0.25  (R1,R2,R8,R9,R15)
- *      Dipertimbangkan  = 0.50  (R3,R4,R11,R12,R13)
- *      Layak            = 0.75  (R5,R6,R7,R10,R14)
- *      Sangat Layak     = 1.00  (R16)
+ *    kᵢ (nilai konsekuen rule):
+ *      Tidak Diprioritaskan = 0.25  (rule output rendah)
+ *      Dipertimbangkan      = 0.50  (rule output sedang)
+ *      Diprioritaskan       = 1.00  (rule output tinggi / sangat tinggi)
  *
- * 4. Skala Prioritas (Tabel 3.26 naskah):
- *    0.81–1.00 → Prioritas I   (Sangat Diprioritaskan)
- *    0.61–0.80 → Prioritas II  (Diprioritaskan)
- *    0.41–0.60 → Prioritas III (Dipertimbangkan)
- *    ≤ 0.40    → Prioritas IV  (Tidak Diprioritaskan)
+ * 4. Skala Prioritas (3 skala):
+ *    > 0.60    → Prioritas I   (Diprioritaskan)
+ *    0.41–0.60 → Prioritas II  (Dipertimbangkan)
+ *    ≤ 0.40    → Prioritas III (Tidak Diprioritaskan)
  */
 class FuzzySugenoService
 {
@@ -742,23 +740,18 @@ class FuzzySugenoService
     private static function getSkalaPrioritas(float $z): array
 {
     return match (true) {
-        $z >= 0.81 => [
+        $z > 0.60 => [
             'prioritas'    => 'Prioritas I',
-            'status'       => 'Sangat Diprioritaskan',
-            'interpretasi' => 'Sangat Diprioritaskan',
-        ],
-        $z >= 0.61 => [
-            'prioritas'    => 'Prioritas II',
             'status'       => 'Diprioritaskan',
             'interpretasi' => 'Diprioritaskan',
         ],
         $z >= 0.41 => [
-            'prioritas'    => 'Prioritas III',
+            'prioritas'    => 'Prioritas II',
             'status'       => 'Dipertimbangkan',
             'interpretasi' => 'Dipertimbangkan',
         ],
         default => [
-            'prioritas'    => 'Prioritas IV',
+            'prioritas'    => 'Prioritas III',
             'status'       => 'Tidak Diprioritaskan',
             'interpretasi' => 'Tidak Diprioritaskan',
         ],
@@ -914,10 +907,9 @@ class FuzzySugenoService
     private static function labelKonsekuen(float $k): string
     {
         return match (true) {
-            $k >= 1.00 => 'Sangat Layak',
-            $k >= 0.75 => 'Layak',
+            $k >= 0.75 => 'Diprioritaskan',
             $k >= 0.50 => 'Dipertimbangkan',
-            default    => 'Tidak Layak',
+            default    => 'Tidak Diprioritaskan',
         };
     }
 }

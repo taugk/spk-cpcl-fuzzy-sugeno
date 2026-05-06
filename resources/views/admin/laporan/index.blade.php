@@ -96,7 +96,17 @@
                             <td>{{ $row->cpcl->lokasi }}</td>
                             <td>{{ $row->cpcl->bidang }}</td>
                             <td class="text-center">{{ number_format($row->skor_akhir, 2) }}</td>
-                            <td class="text-center"><span class="badge bg-success">{{ $row->status_kelayakan }}</span></td>
+                            <td class="text-center">
+                                @php
+                                    $badgeClass = match($row->status_kelayakan) {
+                                        'Diprioritaskan' => 'bg-success',
+                                        'Dipertimbangkan' => 'bg-primary',
+                                        'Tidak Diprioritaskan' => 'bg-secondary',
+                                        default => 'bg-secondary',
+                                    };
+                                @endphp
+                                <span class="badge {{ $badgeClass }}">{{ $row->status_kelayakan }}</span>
+                            </td>
                         </tr>
                         @empty
                         <tr><td colspan="7" class="text-center py-5">Tidak ada data.</td></tr>
