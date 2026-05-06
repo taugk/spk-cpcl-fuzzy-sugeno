@@ -34,22 +34,23 @@
 
                     {{-- EXPORT (SEMUA ROLE) - TANPA ROUTE KHUSUS --}}
                     <div class="btn-group">
-                        <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bx bx-export me-1"></i> Export
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)" onclick="exportToExcel()">
-                                    <i class="bx bx-table me-1"></i> Excel
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()">
-                                    <i class="bx bxs-file-pdf me-1"></i> PDF
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
+    <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="bx bx-export me-1"></i> Export
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item"
+               href="{{ route('admin.cpcl.export', array_merge(request()->query(), ['page_context' => 'belum'])) }}">
+                <i class="bx bx-table me-1"></i> Excel
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()">
+                <i class="bx bxs-file-pdf me-1"></i> PDF
+            </a>
+        </li>
+    </ul>
+</div>
 
                     {{-- TAMBAH CPCL (HANYA ADMIN) --}}
                     @if(Auth::user()->role == 'admin')

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Exports\CpclExport;
 use App\Imports\CpclImport;
 use App\Models\Cpcl;
 use App\Models\Kriteria;
@@ -232,6 +233,33 @@ class CpclController extends Controller
             return back()->withInput()->with('error', 'Gagal memperbarui data');
         }
     }
+
+public function export(Request $request)
+{
+    $user    = Auth::user();
+    $role    = $user->role;
+    $page    = $request->input('page_context');
+    $filters = $request->only(['kecamatan', 'rencana_usaha', 'search']);
+
+    if (!in_array($role, ['admin', 'admin_pangan', 'admin_hartibun'])) {
+        return back()->with('error', 'Anda tidak memiliki akses untuk mengekspor data.');
+    }
+
+    $pageLabel = match ($page) {
+        'terverifikasi' => 'Terverifikasi',
+        'belum'         => 'Belum-Verifikasi',
+        'perbaikan'     => 'Perlu-Perbaikan',
+        'ditolak'       => 'Ditolak',
+        default         => 'Semua-Data',
+    };
+
+    $filename = "Export-CPCL-{$pageLabel}-" . now()->format('Ymd-His') . ".xlsx";
+
+    // Tambahkan cookie sebagai sinyal bahwa export selesai
+    cookie()->queue(cookie('export_done', '1', 1)); // expire 1 menit
+
+    return (new CpclExport($role, $page, $filters))->download($filename);
+}
 
     private function validateCpcl(Request $request, bool $isUpdate = false): array
     {

@@ -14,7 +14,8 @@
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
-                    @if($data->total() > 0)
+                    {{-- HAPUS SEMUA (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin' && $data->total() > 0)
                         <form action="{{route('admin.cpcl.truncate')}}" method="POST" id="formDeleteAll">
                             @csrf
                             @method('DELETE')
@@ -22,24 +23,44 @@
                                 <i class="bx bx-trash me-1"></i> Hapus Semua
                             </button>
                         </form>
-                        @endif
+                    @endif
+
+                    {{-- IMPORT EXCEL (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin')
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i> Import Excel
                     </button>
+                    @endif
 
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="bx bx-export me-1"></i> Export
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="bx bx-table me-1"></i> Excel</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
-                        </ul>
-                    </div>
+                    {{-- EXPORT (SEMUA ROLE) - TANPA ROUTE KHUSUS --}}
+                  <div class="btn-group">
+    <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="bx bx-export me-1"></i> Export
+    </button>
+    <ul class="dropdown-menu">
+        <li>
+            <a class="dropdown-item"
+               href="{{ route('admin.cpcl.export', array_merge(request()->query(), ['page_context' => 'index'])) }}">
+                <i class="bx bx-table me-1"></i> Excel
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()">
+                <i class="bx bxs-file-pdf me-1"></i> PDF
+            </a>
+        </li>
+    </ul>
+</div>
+    
+
+                    {{-- TAMBAH CPCL (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin')
                     <a href="{{ route('admin.add.cpcl') }}" class="btn btn-success">
                         <i class="bx bx-plus me-1"></i> Tambah CPCL
                     </a>
+                    @endif
                 </div>
+            </div>
             </div>
 
             {{-- FILTER SECTION --}}
