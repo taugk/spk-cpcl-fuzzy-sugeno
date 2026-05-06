@@ -179,9 +179,11 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
+                                    @if(Auth::user()->role == 'admin')
                                     <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Verifikasi Sekarang">
                                         <i class="bx bx-shield-check me-1"></i> Verifikasi
                                     </a>
+                                    @endif
                                     
                                     <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
                                         <i class="bx bx-show"></i>
