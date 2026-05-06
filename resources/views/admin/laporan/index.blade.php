@@ -78,7 +78,7 @@
                 <table class="table table-bordered table-hover align-middle w-100">
                     <thead class="table-dark">
                         <tr class="text-center">
-                            <th width="5%">Rank</th>
+                            <th width="5%">No</th>
                             <th>Kelompok Tani</th>
                             <th>Ketua Kelompok</th>
                             <th>Desa/Lokasi</th>
@@ -96,7 +96,7 @@
                             <td>{{ $row->cpcl->lokasi }}</td>
                             <td>{{ $row->cpcl->bidang }}</td>
                             <td class="text-center">{{ number_format($row->skor_akhir, 2) }}</td>
-                            <td class="text-center"><span class="badge bg-success">{{ $row->skala_prioritas }}</span></td>
+                            <td class="text-center"><span class="badge bg-success">{{ $row->status_kelayakan }}</span></td>
                         </tr>
                         @empty
                         <tr><td colspan="7" class="text-center py-5">Tidak ada data.</td></tr>
@@ -242,7 +242,6 @@
                     <thead>
                         <tr>
                             <th width="5%">No.</th>
-                            <th width="6%">Rank</th>
                             <th width="20%">Nama Kelompok Tani</th>
                             <th width="15%">Nama Ketua</th>
                             <th width="15%">Desa / Lokasi</th>
@@ -256,14 +255,13 @@
                         @forelse($data as $index => $row)
                         <tr>
                             <td class="text-center">{{ $loop->iteration }}</td>
-                            <td class="text-center fw-bold">{{ $row->ranking }}</td>
                             <td>{{ $row->cpcl->nama_kelompok }}</td>
                             <td>{{ $row->cpcl->nama_ketua }}</td>
                             <td class="text-center">{{ $row->cpcl->lokasi }}</td>
                             <td class="text-center">{{ $row->cpcl->bidang }}</td>
                             <td class="text-center">{{ number_format($row->cpcl->luas_lahan, 2) }} Ha</td>
                             <td class="text-center fw-bold">{{ number_format($row->skor_akhir, 2) }}</td>
-                            <td class="text-center">{{ $row->skala_prioritas }}</td>
+                            <td class="text-center">{{ $row->status_kelayakan }}</td>
                         </tr>
                         @empty
                         <tr>

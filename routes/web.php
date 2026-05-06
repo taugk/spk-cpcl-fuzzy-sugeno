@@ -63,6 +63,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'role:admin,admin_pa
     Route::get('/perhitungan/{id?}', [FuzzyController::class, 'perhitungan'])->name('perhitungan.index');
     Route::post('/perhitungan/proses', [FuzzyController::class, 'proses'])->name('perhitungan.proses');
     Route::get('/perhitungan/detail/{id}', [FuzzyController::class, 'detail'])->name('perhitungan.detail');
+
+    Route::get('/historis-perhitungan', [FuzzyController::class, 'historisPerhitungan'])->name('historis-perhitungan.index');
     
     // Fitur CPCL
     Route::get('/cpcl', [CpclController::class, 'index'])->name('cpcl.index'); 

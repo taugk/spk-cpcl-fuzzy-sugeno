@@ -86,7 +86,7 @@
       <li class="menu-item {{ request()->routeIs('admin.perhitungan*') ? 'active' : '' }}">
         <a href="{{ route('admin.perhitungan.index') }}" class="menu-link">
           <i class="menu-icon tf-icons bx bx-calculator"></i>
-          <div>Perhitungan & Ranking</div>
+          <div>{{ auth()->user()->role == 'admin' ? 'Riwayat Perhitungan' : 'Perhitungan & Ranking' }}</div>
         </a>
       </li>
     @endif
@@ -117,6 +117,16 @@
         <div>Laporan Akhir</div>
       </a>
     </li>
+
+    {{-- Menu data historis perhitungan untuk admin_pangan & admin_hartibun --}}
+@if(in_array(auth()->user()->role, ['admin_pangan', 'admin_hartibun', 'admin']))
+<li class="menu-item {{ request()->routeIs('admin.historis-perhitungan.index') ? 'active' : '' }}">
+  <a href="{{ route('admin.historis-perhitungan.index') }}" class="menu-link">
+    <i class="menu-icon tf-icons bx bx-history"></i>
+    <div>Data Historis Perhitungan</div>
+  </a>
+</li>
+@endif
 
     {{-- LOGOUT --}}
     <li class="menu-item mt-3">

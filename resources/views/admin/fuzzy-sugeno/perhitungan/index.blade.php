@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', 'Perhitungan dan Ranking CPCL')
+@section('title', Auth::user()->role == 'admin' ? 'Riwayat Perhitungan' : 'Perhitungan dan Ranking CPCL')
 
 @section('content')
 <div class="content-wrapper">
@@ -10,7 +10,7 @@
         <div class="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
             <div>
                 <h4 class="fw-bold text-uppercase mb-1">
-                    <i class="bx bx-calculator me-2 text-success"></i>Perhitungan & Ranking Kelayakan CPCL
+                    <i class="bx bx-calculator me-2 text-success"></i>{{ Auth::user()->role == 'admin' ? 'Riwayat Perhitungan CPCL' : 'Perhitungan & Ranking Kelayakan CPCL' }}
                 </h4>
                 <p class="text-muted mb-0">
                     Hasil Analisis Metode <strong>Fuzzy Sugeno Orde Nol</strong> Tahun Anggaran {{ $periode }}
@@ -79,78 +79,103 @@
     </div>
 </div>
 
-        {{-- TABEL DATA UTAMA --}}
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-dark d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 text-white fw-bold text-uppercase">Daftar Prioritas Penerima Manfaat CPCL</h6>
-                <span class="badge bg-success">Dokumen Hasil Sistem</span>
-            </div>
+       {{-- TABEL DATA UTAMA --}}
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-dark d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 text-white fw-bold text-uppercase">Daftar Prioritas Penerima Manfaat CPCL</h6>
+        <span class="badge bg-success">Dokumen Hasil Sistem</span>
+    </div>
 
-            @if($hasilRanking->isEmpty())
-                <div class="card-body text-center py-5">
-                    <i class="bx bx-data text-light mb-3" style="font-size: 5rem;"></i>
-                    <p class="text-muted">Data hasil perhitungan belum tersedia.<br>Silakan klik tombol <strong>Jalankan Kalkulasi</strong>.</p>
-                </div>
-            @else
-                <div class="table-responsive">
-                    <table class="table table-hover table-sm align-middle mb-0">
-                        <thead class="table-light border-bottom">
-                            <tr class="text-uppercase small fw-bolder text-center">
-                                <th class="py-3" style="width: 60px;">Rank</th>
-                                <th class="py-3 text-start">Kelompok Tani</th>
-                                <th class="py-3 text-start">Bidang</th>
-                                <th class="py-3">Nilai Z</th>
-                                <th class="py-3">Skor (%)</th>
-                                <th class="py-3">Skala Prioritas</th>
-                                <th class="py-3">Status</th>
-                                <th class="py-3 no-print">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($hasilRanking as $index => $h)
-                                <tr class="text-center">
-                                    <td><span class="badge rounded-pill bg-label-dark fw-bold">{{ $loop->iteration }}</span></td>
-                                    <td class="text-start">
-                                        <div class="fw-bold text-dark">{{ $h->cpcl->nama_kelompok }}</div>
-                                        <div class="small text-muted">Ketua: {{ $h->cpcl->nama_ketua }}</div>
-                                    </td>
-                                    <td class="text-start"><span class="small">{{ $h->cpcl->bidang ?? '-' }}</span></td>
-                                    <td class="font-monospace">{{ number_format($h->nilai_z, 4) }}</td>
-                                    <td class="fw-bold">{{ number_format($h->skor_akhir, 2) }}%</td>
-                                    <td>
-                                        @php
-                                            $prioBadge = match($h->skala_prioritas) {
-                                                'Prioritas I'   => 'bg-success',
-                                                'Prioritas II'  => 'bg-primary',
-                                                'Prioritas III' => 'bg-warning text-dark',
-                                                default         => 'bg-secondary',
-                                            };
-                                        @endphp
-                                        <span class="badge {{ $prioBadge }} px-3">{{ $h->skala_prioritas }}</span>
-                                    </td>
-                                    <td>
-                                        @php
-                                            $statusClass = match($h->status_kelayakan) {
-                                                'Sangat Layak'   => 'text-success',
-                                                'Diprioritaskan' => 'text-primary',
-                                                'Dipertimbangkan' => 'text-warning',
-                                                default          => 'text-muted',
-                                            };
-                                        @endphp
-                                        <span class="{{ $statusClass }} fw-bold small text-uppercase">{{ $h->status_kelayakan }}</span>
-                                    </td>
-                                    <td class="no-print">
-                                        <a href="{{ route('admin.perhitungan.detail', $h->cpcl_id) }}" class="btn btn-sm btn-outline-success">
-                                            <i class="bx bx-list-check me-1"></i> Detail
-                                        </a>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+    @if($hasilRanking->isEmpty())
+        <div class="card-body text-center py-5">
+            <i class="bx bx-data text-light mb-3" style="font-size: 5rem;"></i>
+            <p class="text-muted">Data hasil perhitungan belum tersedia.<br>Silakan klik tombol <strong>Jalankan Kalkulasi</strong>.</p>
         </div>
+    @else
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+                <thead class="table-light border-bottom">
+                    <tr class="text-uppercase small fw-bolder text-center">
+                        <th class="py-3" style="width: 60px;">No</th>
+                        <th class="py-3 text-start">Kelompok Tani</th>
+                        <th class="py-3 text-start">Bidang</th>
+                        <th class="py-3">Nilai Z</th>
+                        <th class="py-3">Skor (%)</th>
+                        <th class="py-3">Nama Desa & Kecamatan</th> {{-- Judul kolom diganti --}}
+                        <th class="py-3">Skala Prioritas</th>
+                        <th class="py-3">Status</th>
+                        <th class="py-3 no-print">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($hasilRanking as $index => $h)
+                        <tr class="text-center">
+                            <td><span class="badge rounded-pill bg-label-dark fw-bold">{{ $loop->iteration }}</span></td>
+                            <td class="text-start">
+                                <div class="fw-bold text-dark">{{ $h->cpcl->nama_kelompok }}</div>
+                                <div class="small text-muted">Ketua: {{ $h->cpcl->nama_ketua }}</div>
+                            </td>
+                            <td class="text-start"><span class="small">{{ $h->cpcl->bidang ?? '-' }}</span></td>
+                            <td class="font-monospace">{{ number_format($h->nilai_z, 4) }}</td>
+                            <td class="fw-bold">{{ number_format($h->skor_akhir, 2) }}%</td>
+                            <td>
+                                @if($h->cpcl->alamat)
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="badge bg-label-primary px-3 text-uppercase mb-1">
+                                            {{ $h->cpcl->alamat->desa }}
+                                        </span>
+                                        <small class="text-muted fw-bold" style="font-size: 0.7rem;">
+                                            KEC. {{ $h->cpcl->alamat->kecamatan }}
+                                        </small>
+                                    </div>
+                                @else
+                                    <span class="badge bg-label-secondary">Alamat Tidak Set</span>
+                                @endif
+                            </td>
+                            <td>
+
+@php
+
+$prioBadge = match($h->skala_prioritas) {
+
+'Prioritas I' => 'bg-success',
+
+'Prioritas II' => 'bg-primary',
+
+'Prioritas III' => 'bg-warning text-dark',
+
+default => 'bg-secondary',
+
+};
+
+@endphp
+
+<span class="badge {{ $prioBadge }} px-3">{{ $h->skala_prioritas }}</span>
+
+</td>
+                            <td>
+                                @php
+                                    $statusClass = match($h->status_kelayakan) {
+                                        'Sangat Layak'   => 'text-success',
+                                        'Diprioritaskan' => 'text-primary',
+                                        'Dipertimbangkan' => 'text-warning',
+                                        default          => 'text-muted',
+                                    };
+                                @endphp
+                                <span class="{{ $statusClass }} fw-bold small text-uppercase">{{ $h->status_kelayakan }}</span>
+                            </td>
+                            <td class="no-print">
+                                <a href="{{ route('admin.perhitungan.detail', $h->cpcl_id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bx bx-list-check me-1"></i> Detail
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
 
         {{-- FOOTER / REFERENSI SKALA --}}
         <div class="row mt-4 no-print">

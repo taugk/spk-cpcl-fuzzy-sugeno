@@ -14,7 +14,8 @@
                 </div>
                 
                 <div class="d-flex gap-2 mt-3 mt-md-0">
-                    @if($data->total() > 0)
+                    {{-- HAPUS SEMUA (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin' && $data->total() > 0)
                         <form action="{{route('admin.cpcl.truncate')}}" method="POST" id="formDeleteAll">
                             @csrf
                             @method('DELETE')
@@ -22,30 +23,47 @@
                                 <i class="bx bx-trash me-1"></i> Hapus Semua
                             </button>
                         </form>
-                        @endif
+                    @endif
+
+                    {{-- IMPORT EXCEL (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin')
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i> Import Excel
                     </button>
+                    @endif
 
+                    {{-- EXPORT (SEMUA ROLE) - TANPA ROUTE KHUSUS --}}
                     <div class="btn-group">
                         <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown">
                             <i class="bx bx-export me-1"></i> Export
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="bx bx-table me-1"></i> Excel</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="exportToExcel()">
+                                    <i class="bx bx-table me-1"></i> Excel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()">
+                                    <i class="bx bxs-file-pdf me-1"></i> PDF
+                                </a>
+                            </li>
                         </ul>
                     </div>
+
+                    {{-- TAMBAH CPCL (HANYA ADMIN) --}}
+                    @if(Auth::user()->role == 'admin')
                     <a href="{{ route('admin.add.cpcl') }}" class="btn btn-success">
                         <i class="bx bx-plus me-1"></i> Tambah CPCL
                     </a>
+                    @endif
                 </div>
             </div>
 
             {{-- FILTER SECTION --}}
             <div class="card-body mt-3">
                 {{-- Diarahkan ke current URL agar filter tetap berada di halaman Belum Verifikasi --}}
-                <form action="{{ url()->current() }}" method="GET" class="row g-3">
+                <form action="{{ url()->current() }}" method="GET" class="row g-3" id="filterForm">
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Kecamatan</label>
                         <select name="kecamatan" id="filter-kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -75,7 +93,6 @@
                     <div class="col-md-6 d-flex align-items-end justify-content-md-end">
                         <div class="input-group input-group-sm w-75">
                             <span class="input-group-text"><i class="bx bx-search"></i></span>
-                            {{-- Input search untuk Exact Match sesuai controller --}}
                             <input type="text" name="search" class="form-control" placeholder="Input Nama Poktan / NIK Tepat..." value="{{ request('search') }}">
                             <button class="btn btn-success" type="submit">Cari</button>
                             @if(request()->anyFilled(['kecamatan', 'rencana_usaha', 'search']))
@@ -89,7 +106,7 @@
             </div>
 
             <div class="table-responsive text-nowrap">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle" id="dataTable">
                     <thead class="table-light">
                         <tr>
                             <th width="5%">No</th>
@@ -161,15 +178,15 @@
                             </td>
                             <td class="text-center">
                                 <div class="d-flex justify-content-center gap-1">
-                                    @if(Auth::user()->role !== 'admin')
-                                    {{-- Tombol Verifikasi Khusus Halaman Belum Verifikasi --}}
                                     <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Verifikasi Sekarang">
                                         <i class="bx bx-shield-check me-1"></i> Verifikasi
                                     </a>
-                                    @endif
+                                    
                                     <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
                                         <i class="bx bx-show"></i>
                                     </a>
+                                    
+                                    @if(Auth::user()->role == 'admin')
                                     <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
                                         @csrf
                                         @method('DELETE')
@@ -177,6 +194,7 @@
                                             <i class="bx bx-trash"></i>
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </td>
                         </tr>
@@ -199,7 +217,8 @@
     </div>
 </div>
 
-{{-- MODAL IMPORT --}}
+{{-- MODAL IMPORT (HANYA ADMIN) --}}
+@if(Auth::user()->role == 'admin')
 <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -237,6 +256,7 @@
         </div>
     </div>
 </div>
+@endif
 
 {{-- MODAL PREVIEW FILE --}}
 <div class="modal fade" id="modalPreview" tabindex="-1" aria-hidden="true">
@@ -262,12 +282,134 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
     let fileToUpload = null;
 
+    // --- FUNGSI EXPORT KE EXCEL (tanpa route) ---
+    function exportToExcel() {
+        // Ambil data dari tabel
+        const table = document.getElementById('dataTable');
+        const rows = table.querySelectorAll('tr');
+        
+        // Buat data array untuk Excel
+        let excelData = [];
+        
+        // Ambil header
+        let headers = [];
+        const headerCells = rows[0].querySelectorAll('th');
+        // Skip kolom terakhir (Aksi) untuk export
+        for (let i = 0; i < headerCells.length - 1; i++) {
+            headers.push(headerCells[i].innerText.trim());
+        }
+        excelData.push(headers);
+        
+        // Ambil data body (skip kolom aksi)
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].querySelectorAll('td');
+            if (cells.length > 0) {
+                let rowData = [];
+                // Skip kolom terakhir (Aksi)
+                for (let j = 0; j < cells.length - 1; j++) {
+                    rowData.push(cells[j].innerText.trim());
+                }
+                excelData.push(rowData);
+            }
+        }
+        
+        // Konversi ke worksheet
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Data CPCL Belum Verifikasi");
+        
+        // Download file
+        XLSX.writeFile(wb, `data_cpcl_belum_verifikasi_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+    }
+    
+    // --- FUNGSI EXPORT KE PDF (tanpa route) ---
+    function exportToPDF() {
+        // Ambil element tabel untuk di-export
+        const table = document.getElementById('dataTable');
+        
+        // Clone tabel untuk menghindari mengubah tampilan asli
+        const cloneTable = table.cloneNode(true);
+        
+        // Hapus kolom aksi dari clone
+        const cloneRows = cloneTable.querySelectorAll('tr');
+        cloneRows.forEach(row => {
+            const lastCell = row.querySelector('td:last-child, th:last-child');
+            if (lastCell && (lastCell.innerText.includes('Aksi') || lastCell.querySelector('form, a'))) {
+                lastCell.remove();
+            }
+        });
+        
+        // Buat wrapper untuk PDF
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Export Data CPCL Belum Verifikasi</title>
+                    <style>
+                        body {
+                            font-family: Arial, sans-serif;
+                            margin: 20px;
+                        }
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-top: 20px;
+                        }
+                        th, td {
+                            border: 1px solid #ddd;
+                            padding: 8px;
+                            text-align: left;
+                        }
+                        th {
+                            background-color: #f2f2f2;
+                            font-weight: bold;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 20px;
+                        }
+                        .header h2 {
+                            margin: 0;
+                        }
+                        .header p {
+                            color: #666;
+                            margin: 5px 0;
+                        }
+                        .footer {
+                            margin-top: 30px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #999;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>Data CPCL Belum Terverifikasi</h2>
+                        <p>Filter: Kecamatan = ${document.querySelector('select[name="kecamatan"]')?.value || 'Semua'} | 
+                           Rencana Usaha = ${document.querySelector('select[name="rencana_usaha"]')?.value || 'Semua'} |
+                           Pencarian = ${document.querySelector('input[name="search"]')?.value || '-'}</p>
+                        <p>Tanggal Export: ${new Date().toLocaleString('id-ID')}</p>
+                    </div>
+                    ${cloneTable.outerHTML}
+                    <div class="footer">
+                        Dicetak dari Sistem Informasi CPCL
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    @if(Auth::user()->role == 'admin')
     // --- LOGIKA SHEETJS PREVIEW ---
-    document.getElementById('inputExcel').addEventListener('change', function(e) {
+    document.getElementById('inputExcel')?.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
@@ -310,8 +452,8 @@
         }
     }
 
-    // --- AJAX SIMPAN ---
-    document.getElementById('btnSimpanImport').addEventListener('click', function() {
+    // --- AJAX SIMPAN IMPORT ---
+    document.getElementById('btnSimpanImport')?.addEventListener('click', function() {
         const btn = this;
         const formData = new FormData();
         formData.append('file_excel', fileToUpload);
@@ -339,6 +481,7 @@
             btn.disabled = false;
         });
     });
+    @endif
 
     // --- PREVIEW FILE ---
     function previewFile(url, title) {
@@ -375,20 +518,25 @@
         fetch(`/proxy-wilayah/districts/32.08`)
             .then(res => res.json())
             .then(data => {
-                filterKecamatan.innerHTML = '<option value="">Semua Kecamatan</option>';
-                data.data.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item.name;
-                    opt.text = item.name;
-                    if(item.name === currentKecamatan) opt.selected = true;
-                    filterKecamatan.appendChild(opt);
-                });
+                if (filterKecamatan) {
+                    filterKecamatan.innerHTML = '<option value="">Semua Kecamatan</option>';
+                    data.data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.name;
+                        opt.text = item.name;
+                        if(item.name === currentKecamatan) opt.selected = true;
+                        filterKecamatan.appendChild(opt);
+                    });
+                }
             })
             .catch(() => {
-                filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
+                if (filterKecamatan) {
+                    filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
+                }
             });
     });
 
+    @if(Auth::user()->role == 'admin')
     function confirmDeleteAll() {
         Swal.fire({
             title: 'Apakah Anda yakin?',
@@ -405,6 +553,7 @@
             }
         });
     }
+    @endif
 </script>
 
 <style>

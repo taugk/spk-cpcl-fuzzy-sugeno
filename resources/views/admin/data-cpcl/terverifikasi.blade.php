@@ -13,6 +13,8 @@
                     <small class="text-muted">Data Calon Petani & Calon Lokasi (Periode 2026)</small>
                 </div>
                 
+                {{-- TOMBOL AKSI - HANYA UNTUK ROLE ADMIN --}}
+                @if(Auth::user()->role == 'admin')
                 <div class="d-flex gap-2 mt-3 mt-md-0">
                     <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalImport">
                         <i class="bx bx-upload me-1"></i> Import Excel
@@ -23,19 +25,20 @@
                             <i class="bx bx-export me-1"></i> Export
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#"><i class="bx bx-table me-1"></i> Excel</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportToExcel()"><i class="bx bx-table me-1"></i> Excel</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportToPDF()"><i class="bx bxs-file-pdf me-1"></i> PDF</a></li>
                         </ul>
                     </div>
                     <a href="{{ route('admin.add.cpcl') }}" class="btn btn-success">
                         <i class="bx bx-plus me-1"></i> Tambah CPCL
                     </a>
                 </div>
+                @endif
             </div>
 
             {{-- FILTER SECTION --}}
             <div class="card-body mt-3">
-                <form action="{{ route('admin.cpcl.index') }}" method="GET" class="row g-3">
+                <form action="{{ route('admin.cpcl.index') }}" method="GET" class="row g-3" id="filterForm">
                     <div class="col-md-3">
                         <label class="form-label small fw-bold">Kecamatan</label>
                         <select name="kecamatan" id="filter-kecamatan" class="form-select form-select-sm" onchange="this.form.submit()">
@@ -78,7 +81,7 @@
             </div>
 
             <div class="table-responsive text-nowrap">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle" id="dataTable">
                     <thead class="table-light">
                         <tr>
                             <th width="5%">No</th>
@@ -157,34 +160,35 @@
                                 <span class="badge {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $row->status)) }}</span>
                             </td>
                             <td class="text-center">
-    <div class="d-flex justify-content-center gap-1">
-        @if($row->status !== 'baru')
-            {{-- Tombol Edit Verifikasi (Hanya muncul jika sudah pernah diverifikasi/bukan status baru) --}}
-            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Edit Verifikasi">
-                <i class="bx bx-shield-check"></i> Edit Verifikasi
-            </a>
-        @else
-            {{-- Tombol Verifikasi Pertama Kali --}}
-            <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-warning" title="Verifikasi Data">
-                <i class="bx bx-check-shield">Verifikasi</i>
-            </a>
-        @endif
+                                <div class="d-flex justify-content-center gap-1">
+                                    {{-- TOMBOL EDIT VERIFIKASI (SEMUA ROLE) --}}
+                                    @if($row->status !== 'baru')
+                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-success" title="Edit Verifikasi">
+                                            <i class="bx bx-shield-check"></i> Edit Verifikasi
+                                        </a>
+                                    @else
+                                        <a href="{{ route('admin.cpcl.verify', $row->id) }}" class="btn btn-sm btn-warning" title="Verifikasi Data">
+                                            <i class="bx bx-check-shield"></i> Verifikasi
+                                        </a>
+                                    @endif
 
-        {{-- Tombol Detail --}}
-        <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
-            <i class="bx bx-show"></i>
-        </a>
+                                    {{-- TOMBOL DETAIL (SEMUA ROLE) --}}
+                                    <a href="{{ route('admin.cpcl.show', $row->id) }}" class="btn btn-icon btn-sm btn-label-info" title="Detail Data">
+                                        <i class="bx bx-show"></i>
+                                    </a>
 
-        {{-- Tombol Hapus --}}
-        <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
-            @csrf
-            @method('DELETE')
-            <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm" title="Hapus Data">
-                <i class="bx bx-trash"></i>
-            </button>
-        </form>
-    </div>
-</td>
+                                    {{-- TOMBOL HAPUS (HANYA ADMIN) --}}
+                                    @if(Auth::user()->role == 'admin')
+                                    <form action="{{ route('admin.cpcl.destroy', $row->id) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-icon btn-sm btn-label-danger btn-delete-confirm" title="Hapus Data">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </form>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
                         @empty
                         <tr>
@@ -205,6 +209,8 @@
     </div>
 </div>
 
+{{-- MODAL IMPORT (HANYA UNTUK ADMIN) --}}
+@if(Auth::user()->role == 'admin')
 <div class="modal fade" id="modalImport" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -247,7 +253,9 @@
         </div>
     </div>
 </div>
+@endif
 
+{{-- MODAL PREVIEW FILE --}}
 <div class="modal fade" id="modalPreview" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -275,8 +283,85 @@
 <script>
     let fileToUpload = null;
 
+    // --- FUNGSI EXPORT KE EXCEL (tanpa route) ---
+    function exportToExcel() {
+        const table = document.getElementById('dataTable');
+        const rows = table.querySelectorAll('tr');
+        
+        let excelData = [];
+        
+        // Ambil header (skip kolom aksi)
+        const headers = [];
+        const headerCells = rows[0].querySelectorAll('th');
+        for (let i = 0; i < headerCells.length - 1; i++) {
+            headers.push(headerCells[i].innerText.trim());
+        }
+        excelData.push(headers);
+        
+        // Ambil data body (skip kolom aksi)
+        for (let i = 1; i < rows.length; i++) {
+            const cells = rows[i].querySelectorAll('td');
+            if (cells.length > 0) {
+                const rowData = [];
+                for (let j = 0; j < cells.length - 1; j++) {
+                    rowData.push(cells[j].innerText.trim());
+                }
+                excelData.push(rowData);
+            }
+        }
+        
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Master Data CPCL");
+        XLSX.writeFile(wb, `master_cpcl_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.xlsx`);
+    }
+    
+    // --- FUNGSI EXPORT KE PDF ---
+    function exportToPDF() {
+        const table = document.getElementById('dataTable');
+        const cloneTable = table.cloneNode(true);
+        
+        // Hapus kolom aksi dari clone
+        const cloneRows = cloneTable.querySelectorAll('tr');
+        cloneRows.forEach(row => {
+            const lastCell = row.querySelector('td:last-child, th:last-child');
+            if (lastCell && (lastCell.innerText.includes('Aksi') || lastCell.querySelector('form, a'))) {
+                lastCell.remove();
+            }
+        });
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Master Data CPCL</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; font-weight: bold; }
+                        .header { text-align: center; margin-bottom: 20px; }
+                        .header h2 { margin: 0; }
+                        .footer { margin-top: 30px; text-align: center; font-size: 12px; color: #999; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>Master Data CPCL</h2>
+                        <p>Tanggal Export: ${new Date().toLocaleString('id-ID')}</p>
+                    </div>
+                    ${cloneTable.outerHTML}
+                    <div class="footer">Dicetak dari Sistem Informasi CPCL</div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    @if(Auth::user()->role == 'admin')
     // --- LOGIKA SHEETJS PREVIEW ---
-    document.getElementById('inputExcel').addEventListener('change', function(e) {
+    document.getElementById('inputExcel')?.addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (!file) return;
         
@@ -303,12 +388,10 @@
         tbody.innerHTML = '';
 
         if (data.length > 0) {
-            // Render Header
             let headHtml = '<tr>';
             data[0].forEach(cell => headHtml += `<th>${cell || ''}</th>`);
             thead.innerHTML = headHtml + '</tr>';
 
-            // Render Body (Max 10 baris)
             for (let i = 1; i < Math.min(data.length, 11); i++) {
                 let bodyHtml = '<tr>';
                 data[i].forEach(cell => bodyHtml += `<td>${cell || ''}</td>`);
@@ -322,7 +405,7 @@
     }
 
     // --- AJAX SIMPAN KE SERVER ---
-    document.getElementById('btnSimpanImport').addEventListener('click', function() {
+    document.getElementById('btnSimpanImport')?.addEventListener('click', function() {
         const btn = this;
         const formData = new FormData();
         formData.append('file_excel', fileToUpload);
@@ -350,8 +433,9 @@
             btn.disabled = false;
         });
     });
+    @endif
 
-    // --- FUNGSI PREVIEW LAMPIRAN (LAMA) ---
+    // --- FUNGSI PREVIEW LAMPIRAN ---
     function previewFile(url, title) {
         const previewContent = document.getElementById('previewContent');
         const modalTitle = document.getElementById('modalTitle');
@@ -386,17 +470,21 @@
         fetch(`/proxy-wilayah/districts/32.08`)
             .then(res => res.json())
             .then(data => {
-                filterKecamatan.innerHTML = '<option value="">Semua Kecamatan</option>';
-                data.data.forEach(item => {
-                    const opt = document.createElement('option');
-                    opt.value = item.name;
-                    opt.text = item.name;
-                    if(item.name === currentKecamatan) opt.selected = true;
-                    filterKecamatan.appendChild(opt);
-                });
+                if (filterKecamatan) {
+                    filterKecamatan.innerHTML = '<option value="">Semua Kecamatan</option>';
+                    data.data.forEach(item => {
+                        const opt = document.createElement('option');
+                        opt.value = item.name;
+                        opt.text = item.name;
+                        if(item.name === currentKecamatan) opt.selected = true;
+                        filterKecamatan.appendChild(opt);
+                    });
+                }
             })
             .catch(() => {
-                filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
+                if (filterKecamatan) {
+                    filterKecamatan.innerHTML = '<option value="">Gagal memuat</option>';
+                }
             });
     });
 </script>

@@ -7,6 +7,8 @@ use App\Models\Cpcl;
 use App\Models\HasilFuzzy;
 use App\Services\FuzzySugenoService;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 class FuzzyController extends Controller
@@ -40,54 +42,63 @@ class FuzzyController extends Controller
     }
 
     public function perhitungan(Request $request)
-    {
-        $periode = $request->get('periode', date('Y'));
+{
+    // Mengambil periode dari request, default tahun saat ini
+    $periode = $request->get('periode', date('Y'));
 
-        // 1. Hitung CPCL Terverifikasi yang BELUM dihitung (Filtered)
-        $queryCount = Cpcl::where('status', 'terverifikasi')
-            ->whereYear('created_at', $periode)
-            ->whereDoesntHave('hasilFuzzy');
-        $cpclVerifiedIsNotCount = $this->filterByRole($queryCount)->count();
+    // 1. Hitung CPCL Terverifikasi yang BELUM dihitung (Filtered by Role)
+    // Menambahkan filter agar admin bidang hanya melihat data bidangnya sendiri
+    $queryCount = Cpcl::where('status', 'terverifikasi')
+        ->whereYear('created_at', $periode)
+        ->whereDoesntHave('hasilFuzzy');
+    
+    $cpclVerifiedIsNotCount = $this->filterByRole($queryCount)->count();
 
-        // 2. Daftar Periode (Hanya tampilkan tahun yang ada datanya sesuai bidang)
-        $queryPeriode = HasilFuzzy::join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id');
-        $queryPeriode = $this->filterByRole($queryPeriode);
-        $periodeList = $queryPeriode->selectRaw('YEAR(cpcl.created_at) as tahun')
-            ->distinct()
-            ->orderByDesc('tahun')
-            ->pluck('tahun');
+    // 2. Daftar Periode (Hanya tampilkan tahun yang memiliki data hasil fuzzy)
+    $queryPeriode = HasilFuzzy::join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id');
+    $queryPeriode = $this->filterByRole($queryPeriode);
+    
+    $periodeList = $queryPeriode->selectRaw('YEAR(cpcl.created_at) as tahun')
+        ->distinct()
+        ->orderByDesc('tahun')
+        ->pluck('tahun');
 
-        if (!$periodeList->contains(date('Y'))) {
-            $periodeList->prepend(date('Y'));
-        }
-
-        // 3. Ambil Hasil Ranking (Filtered)
-        $queryRanking = HasilFuzzy::with('cpcl')
-            ->join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id')
-            ->whereYear('cpcl.created_at', $periode)
-            ->whereNotNull('hasil_fuzzy.ranking');
-        
-        $hasilRanking = $this->filterByRole($queryRanking)
-            // Ubah dari 'ranking' menjadi 'skor_akhir' dengan urutan DESC (Descending)
-            ->orderBy('hasil_fuzzy.skor_akhir', 'desc') 
-            ->select('hasil_fuzzy.*')
-            ->get();
-        // 4. Hitung Total Terverifikasi (Filtered)
-        $queryTotal = Cpcl::where('status', 'terverifikasi')
-            ->whereYear('created_at', $periode);
-        $totalTerverifikasi = $this->filterByRole($queryTotal)->count();
-
-        $totalBelumDihitung = $cpclVerifiedIsNotCount;
-
-        return view('admin.fuzzy-sugeno.perhitungan.index', compact(
-            'hasilRanking', 
-            'periode', 
-            'periodeList',
-            'totalTerverifikasi', 
-            'totalBelumDihitung',
-            'cpclVerifiedIsNotCount'
-        ));
+    // Pastikan tahun berjalan ada di list filter meskipun belum ada data
+    if (!$periodeList->contains(date('Y'))) {
+        $periodeList->prepend(date('Y'));
     }
+
+    // 3. Ambil Hasil Ranking (Filtered by Role)
+    // Menambahkan Eager Loading 'cpcl.alamat' untuk mengambil data Desa & Kecamatan
+    $queryRanking = HasilFuzzy::with(['cpcl.alamat']) 
+        ->join('cpcl', 'hasil_fuzzy.cpcl_id', '=', 'cpcl.id')
+        ->whereYear('cpcl.created_at', $periode)
+        ->whereNotNull('hasil_fuzzy.ranking');
+    
+    $hasilRanking = $this->filterByRole($queryRanking)
+        // Diurutkan berdasarkan skor_akhir tertinggi (Descending)
+        ->orderBy('hasil_fuzzy.skor_akhir', 'desc') 
+        ->select('hasil_fuzzy.*')
+        ->get();
+
+    // 4. Hitung Total Terverifikasi untuk info badge (Filtered by Role)
+    $queryTotal = Cpcl::where('status', 'terverifikasi')
+        ->whereYear('created_at', $periode);
+    
+    $totalTerverifikasi = $this->filterByRole($queryTotal)->count();
+
+    $totalBelumDihitung = $cpclVerifiedIsNotCount;
+
+    // Mengirimkan data ke View
+    return view('admin.fuzzy-sugeno.perhitungan.index', compact(
+        'hasilRanking', 
+        'periode', 
+        'periodeList',
+        'totalTerverifikasi', 
+        'totalBelumDihitung',
+        'cpclVerifiedIsNotCount'
+    ));
+}
 
     public function proses(Request $request)
     {
@@ -145,4 +156,83 @@ class FuzzyController extends Controller
 
         return view('admin.fuzzy-sugeno.perhitungan.detail', compact('hasil'));
     }
+
+    public function historisPerhitungan(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Tentukan filter bidang berdasarkan role user
+        $roleBidang = null;
+        if ($user->role === 'admin_pangan') {
+            $roleBidang = 'Pangan';
+        } elseif ($user->role === 'admin_hartibun') {
+            $roleBidang = 'Hartibun';
+        }
+
+        // 2. Ambil daftar tahun unik (Gunakan Carbon untuk mendapatkan tahun berjalan jika perlu)
+        $queryTahun = Cpcl::select(DB::raw('YEAR(created_at) as tahun'))->distinct();
+        if ($roleBidang) {
+            $queryTahun->where('bidang', $roleBidang);
+        }
+        $listTahun = $queryTahun->pluck('tahun');
+
+        // Menggunakan Carbon untuk mendapatkan tahun saat ini secara aman
+        $tahunSekarang = Carbon::now()->year; 
+        if (!$listTahun->contains($tahunSekarang)) {
+            $listTahun->prepend($tahunSekarang);
+        }
+
+        // 3. Ambil daftar lokasi/kecamatan unik
+        $queryLokasi = Cpcl::distinct();
+        if ($roleBidang) {
+            $queryLokasi->where('bidang', $roleBidang);
+        }
+        $listLokasi = $queryLokasi->pluck('lokasi');
+
+        // 4. Ambil daftar bidang unik 
+        if ($roleBidang) {
+            $listBidang = collect([$roleBidang]);
+        } else {
+            $listBidang = Cpcl::distinct()->pluck('bidang');
+        }
+
+        // 5. Query Utama Hasil Fuzzy
+        $query = HasilFuzzy::with(['cpcl.alamat'])
+            ->where('status_kelayakan', 'Dipertimbangkan');
+
+        if ($roleBidang) {
+            $query->whereHas('cpcl', function($q) use ($roleBidang) {
+                $q->where('bidang', $roleBidang);
+            });
+        }
+
+        // Filter Tambahan
+        if ($request->tahun) {
+            $query->whereHas('cpcl', function($q) use ($request) {
+                $q->whereYear('created_at', $request->tahun);
+            });
+        }
+        
+        if ($request->lokasi) {
+            $query->whereHas('cpcl', function($q) use ($request) {
+                $q->where('lokasi', $request->lokasi);
+            });
+        }
+        
+        if ($request->bidang && !$roleBidang) {
+            $query->whereHas('cpcl', function($q) use ($request) {
+                $q->where('bidang', $request->bidang);
+            });
+        }
+
+        $data = $query->orderBy('skor_akhir', 'desc')->get();
+
+        return view('admin.fuzzy-sugeno.perhitungan.historis', compact(
+            'data', 
+            'listTahun', 
+            'listLokasi', 
+            'listBidang'
+        ));
+    }
+            
 }
