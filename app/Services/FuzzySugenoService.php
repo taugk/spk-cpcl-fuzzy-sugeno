@@ -740,12 +740,12 @@ class FuzzySugenoService
     private static function getSkalaPrioritas(float $z): array
 {
     return match (true) {
-        $z > 0.60 => [
+        $z > 0.75 => [
             'prioritas'    => 'Prioritas I',
             'status'       => 'Diprioritaskan',
             'interpretasi' => 'Diprioritaskan',
         ],
-        $z >= 0.41 => [
+        $z >= 0.50 => [
             'prioritas'    => 'Prioritas II',
             'status'       => 'Dipertimbangkan',
             'interpretasi' => 'Dipertimbangkan',

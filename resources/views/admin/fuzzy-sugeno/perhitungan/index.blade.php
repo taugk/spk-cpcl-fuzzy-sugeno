@@ -188,19 +188,19 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td class="text-center fw-bold">Z > 0.60</td>
+                                <td class="text-center fw-bold">Z > 0.75</td>
                                 <td class="text-center"><span class="badge bg-success">Prioritas I</span></td>
                                 <td class="fw-bold text-success">Diprioritaskan</td>
                                 <td class="text-muted">Sangat Layak untuk diprioritaskan</td>
                             </tr>
                             <tr>
-                                <td class="text-center fw-bold">0.41 ≤ Z ≤ 0.60</td>
+                                <td class="text-center fw-bold">0.50 ≤ Z ≤ 0.75</td>
                                 <td class="text-center"><span class="badge bg-primary">Prioritas II</span></td>
                                 <td class="fw-bold text-primary">Dipertimbangkan</td>
                                 <td class="text-muted">Layak dengan pertimbangan khusus</td>
-                            </tr>
+                            </tr>ss
                             <tr>
-                                <td class="text-center fw-bold">Z < 0.41</td>
+                                <td class="text-center fw-bold">Z < 0.50</td>
                                 <td class="text-center"><span class="badge bg-secondary">Prioritas III</span></td>
                                 <td class="fw-bold text-secondary">Tidak Diprioritaskan</td>
                                 <td class="text-muted">Belum memenuhi kriteria prioritas</td>
